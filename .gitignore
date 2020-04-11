@@ -133,3 +133,6 @@ dmypy.json
 
 # sentencepiece model & vocab
 data/sp/
+
+# data file processing file
+src/data_process.py
