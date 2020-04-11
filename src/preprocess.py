@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from config import *
+from .constants import *
 
 import torch
 import sentencepiece as spm
@@ -52,6 +52,7 @@ def process_tar(text_list):
 
 class CustomDataset(Dataset):
     def __init__(self, src_list, tar_input_list, tar_output_list):
+        super().__init__()
         self.src_list = src_list
         self.tar_input_list = tar_input_list
         self.tar_output_list = tar_output_list

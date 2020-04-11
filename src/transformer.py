@@ -1,5 +1,5 @@
 from torch import nn
-from config import *
+from .constants import *
 
 import torch
 import math
@@ -7,6 +7,7 @@ import math
 
 class MultiheadAttention(nn.Module):
     def __init__(self):
+        super().__init__()
         self.inf = 1e9
 
         # W^Q, W^K, W^V in the paper
@@ -31,7 +32,11 @@ class MultiheadAttention(nn.Module):
         k = k.transpose(1, 2)
         v = v.transpose(1, 2)
 
-        
+        # Conduct self-attention
+        attn_values = self.self_attention(q, k, v, mask=mask) # (B, num_heads, L, d_k)
+        concat_output = attn_values.transpose(1, 2).view(batch_size, seq_len, d_k) # (B, L, num_heads * d_k) = (B, L, d_model)
+
+        return concat_output
 
     def self_attention(self, q, k, v, mask=None):
         # Calculate attention scores with scaled dot-product attention
@@ -45,13 +50,30 @@ class MultiheadAttention(nn.Module):
 
         # Softmax and multiplying K to calculate attention value
         attn_scores = self.dropout(attn_scores)
-        attn_distrib = self.attn_softmax(attn_scores) # (B, num_heads, L, L)
-        attn_value = torch.matmul(attn_distrib, v) # (B, num_heads, L, d_k)
+        attn_distribs = self.attn_softmax(attn_scores) # (B, num_heads, L, L)
+        attn_values = torch.matmul(attn_distribs, v) # (B, num_heads, L, d_k)
 
-        return attn_value
+        return attn_values
+
+
+class FeedFowardLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear_1 = nn.Linear(d_model, d_ff, bias=True)
+        self.relu = nn.ReLU()
+        self.linear_2 = nn.Linear(d_ff, d_model, bias=True)
+        self.dropout = nn.Dropout(drop_out_rate)
+
+    def forward(self, x):
+        x = self.relu(self.linear_1(x))
+        x = self.dropout(x)
+        x = self.linear_2(x)
+
+        return x
 
 class PositionalEncoder(nn.Module):
     def __init__(self):
+        super().__init__()
         # Make initial positional encoding matrix with 0
         pe_matrix= torch.zeros(seq_len, d_model) # (L, d_model)
 

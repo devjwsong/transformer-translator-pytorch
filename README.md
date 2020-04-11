@@ -42,12 +42,6 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
 4. 
 
-5. 
-
-6. 
-
-7. 
-
    <br/>
 
 ---
