@@ -14,3 +14,12 @@ tar_model_prefix = 'tar_sp'
 vocab_size = 16000
 character_coverage = 1.0
 model_type = 'bpe'
+
+# Parameters for Transformer & training
+learning_rate = 0.0001
+batch_size = 16
+seq_len = 320
+num_heads = 8
+num_layers = 6
+d_model = 512
+d_ff = 2048
