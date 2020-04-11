@@ -19,10 +19,35 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    pip install -r requirements.txt
    ```
    
-2.  
+2. Go to `src` directory and run `sp_process.py`.
+
+   ```shell
+   python sp_process.py
+   ```
+
+   Then in `data` directory, there would be `sp` directory containing two sentencepiece models and two vocab files.
+
+   Each model and vocab files are for source language and target language.
+
+   - data
+     - sp
+       - src_sp.model
+       - src_sp.vocab
+       - tar_sp.model
+       - tar_sp.vocab
+     - full_data.src
+     - full_data.tar
+
+3. 
+
+4. 
+
+5. 
+
+6. 
+
+7. 
 
    <br/>
-
-   
 
 ---

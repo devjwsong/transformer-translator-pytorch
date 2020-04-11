@@ -130,3 +130,6 @@ dmypy.json
 
 # pycharm
 .idea
+
+# sentencepiece model & vocab
+data/sp/
