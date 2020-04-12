@@ -32,10 +32,10 @@ class DecoderLayer(nn.Module):
         self.feed_forward = FeedFowardLayer()
         self.layer_norm3 = LayerNormalization()
 
-    def forward(self, x, masked_attn_mask, attn_mask):
+    def forward(self, x, encoder_output, masked_attn_mask, attn_mask):
         after_masked_attn = self.masked_multihead_attention(x, x, x, mask=masked_attn_mask) # (B, L, d_model) => (B, L, d_model)
         after_norm_1 = self.layer_norm1(after_masked_attn + x) # (B, L, d_model) => (B, L, d_model)
-        after_attn = self.multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=attn_mask) # (B, L, d_model) => (B, L, d_model)
+        after_attn = self.multihead_attention(after_norm_1, encoder_output, encoder_output, mask=attn_mask) # (B, L, d_model) => (B, L, d_model)
         after_norm_2 = self.layer_norm2(after_attn + after_norm_1) # (B, L, d_model) => (B, L, d_model)
         after_ff = self.feed_forward(after_norm_2) # (B, L, d_model) => (B, L, d_ff) => (B, L, d_model)
         after_norm_3 = self.layer_norm3(after_ff + after_norm_2) # (B, L, d_model) => (B, L, d_model)

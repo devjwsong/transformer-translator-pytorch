@@ -27,7 +27,7 @@ def train_sp(is_src=True):
                             eos_id,
                             unk_id,
                             this_model_prefix,
-                            vocab_size,
+                            sp_vocab_size,
                             character_coverage,
                             model_type)
 

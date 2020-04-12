@@ -13,7 +13,7 @@ eos_id = 2
 unk_id = 3
 src_model_prefix = 'src_sp'
 tar_model_prefix = 'tar_sp'
-vocab_size = 16000
+sp_vocab_size = 16000
 character_coverage = 1.0
 model_type = 'bpe'
 
@@ -28,3 +28,4 @@ d_model = 512
 d_ff = 2048
 d_k = d_model // num_heads
 drop_out_rate = 0.1
+num_epochs = 100
