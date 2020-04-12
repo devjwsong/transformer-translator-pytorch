@@ -135,4 +135,4 @@ dmypy.json
 data/sp/
 
 # data file processing file
-src/data_process.py
+src/raw_data_process.py

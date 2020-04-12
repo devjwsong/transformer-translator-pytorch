@@ -83,7 +83,7 @@ class MultiheadAttention(nn.Module):
 
         # If there is a mask, make masked spots -INF
         if mask is not None:
-            mask = mask.unsqueeze(1) # (B, L, L) => (B, 1, L, L)
+            mask = mask.unsqueeze(1) # (B, 1, L) => (B, 1, 1, L) or (B, L, L) => (B, 1, L, L)
             attn_scores = attn_scores.masked_fill_(mask == 0, -1 * self.inf)
 
         # Softmax and multiplying K to calculate attention value
