@@ -5,6 +5,44 @@ import torch
 import math
 
 
+class EncoderLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.multihead_attention = MultiheadAttention()
+        self.layer_norm_1 = LayerNormalization()
+        self.feed_forward = FeedFowardLayer()
+        self.layer_norm_2 = LayerNormalization()
+
+    def forward(self, x, encoder_mask):
+        after_attn = self.multihead_attention(x, x, x, mask=encoder_mask) # (B, L, d_model) => (B, L, d_model)
+        after_norm_1 = self.layer_norm_1(after_attn + x) # (B, L, d_model) => (B, L, d_model)
+        after_ff = self.feed_forward(after_norm_1) # (B, L, d_model) => (B, L, d_ff) => (B, L, d_model)
+        after_norm_2 = self.layer_norm_2(after_ff + after_norm_1) # (B, L, d_model) => (B, L, d_model)
+
+        return after_norm_2
+
+
+class DecoderLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.masked_multihead_attention = MultiheadAttention()
+        self.layer_norm1 = LayerNormalization()
+        self.multihead_attention = MultiheadAttention()
+        self.layer_norm2 = LayerNormalization()
+        self.feed_forward = FeedFowardLayer()
+        self.layer_norm3 = LayerNormalization()
+
+    def forward(self, x, masked_attn_mask, attn_mask):
+        after_masked_attn = self.masked_multihead_attention(x, x, x, mask=masked_attn_mask) # (B, L, d_model) => (B, L, d_model)
+        after_norm_1 = self.layer_norm1(after_masked_attn + x) # (B, L, d_model) => (B, L, d_model)
+        after_attn = self.multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=attn_mask) # (B, L, d_model) => (B, L, d_model)
+        after_norm_2 = self.layer_norm2(after_attn + after_norm_1) # (B, L, d_model) => (B, L, d_model)
+        after_ff = self.feed_forward(after_norm_2) # (B, L, d_model) => (B, L, d_ff) => (B, L, d_model)
+        after_norm_3 = self.layer_norm3(after_ff + after_norm_2) # (B, L, d_model) => (B, L, d_model)
+
+        return after_norm_3
+
+
 class MultiheadAttention(nn.Module):
     def __init__(self):
         super().__init__()
@@ -65,11 +103,24 @@ class FeedFowardLayer(nn.Module):
         self.dropout = nn.Dropout(drop_out_rate)
 
     def forward(self, x):
-        x = self.relu(self.linear_1(x))
+        x = self.relu(self.linear_1(x)) # (B, L, d_ff)
         x = self.dropout(x)
-        x = self.linear_2(x)
+        x = self.linear_2(x) # (B, L, d_model)
 
         return x
+
+
+class LayerNormalization(nn.Module):
+    def __init__(self, eps=1e-5):
+        super().__init__()
+        self.eps = eps
+        self.layer = nn.LayerNorm([seq_len, d_model], elementwise_affine=True, eps=self.eps)
+
+    def forward(self, x):
+        x = self.layer(x)
+
+        return x
+
 
 class PositionalEncoder(nn.Module):
     def __init__(self):
