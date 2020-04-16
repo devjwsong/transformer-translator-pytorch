@@ -136,3 +136,6 @@ data/sp/
 
 # data file processing file
 src/raw_data_process.py
+
+# ckpt model
+model/

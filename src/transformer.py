@@ -1,6 +1,6 @@
 from torch import nn
-from .constants import *
-from .layers import *
+from src.constants import *
+from src.layers import *
 
 import torch
 

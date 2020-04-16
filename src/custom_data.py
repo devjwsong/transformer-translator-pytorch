@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from .constants import *
+from src.constants import *
 
 import torch
 import sentencepiece as spm

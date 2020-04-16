@@ -1,5 +1,5 @@
 from torch import nn
-from .constants import *
+from src.constants import *
 
 import torch
 import math
