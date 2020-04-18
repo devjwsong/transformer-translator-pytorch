@@ -6,10 +6,10 @@ import torch
 
 
 class Transformer(nn.Module):
-    def __init__(self, src_vocab, tar_vocab):
+    def __init__(self, src_vocab_size, tar_vocab_size):
         super().__init__()
-        self.src_vocab_size = len(src_vocab)
-        self.tar_vocab_size = len(tar_vocab)
+        self.src_vocab_size = src_vocab_size
+        self.tar_vocab_size = tar_vocab_size
 
         self.src_embedding = nn.Embedding(self.src_vocab_size, d_model)
         self.tar_embedding = nn.Embedding(self.tar_vocab_size, d_model)

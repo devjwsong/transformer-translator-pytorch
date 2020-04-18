@@ -1,8 +1,8 @@
 import torch
 
 # Path or parameters for data
-DATA_DIR = '../data'
-SP_DIR = '../data/sp'
+DATA_DIR = 'data'
+SP_DIR = 'data/sp'
 SRC_DATA_NAME = 'full_data.en'
 TAR_DATA_NAME = 'full_data.fr'
 
@@ -29,3 +29,4 @@ d_ff = 2048
 d_k = d_model // num_heads
 drop_out_rate = 0.1
 num_epochs = 100
+ckpt_dir = 'model'
