@@ -38,9 +38,17 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
      - full_data.src
      - full_data.tar
 
-3. 
+3. Run below command to train a transformer model for machine translation.
 
-4. 
+   ```shell
+   python main.py --mode='train'
+   ```
+
+4. Run below command to test the trained model.
+
+   ```shell
+   python main.py --mode='test' --model_name=MODEL_FILE_NAME
+   ```
 
    <br/>
 
