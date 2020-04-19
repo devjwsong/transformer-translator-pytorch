@@ -139,3 +139,6 @@ src/raw_data_process.py
 
 # ckpt model
 model/
+
+# tensorboard log
+runs/

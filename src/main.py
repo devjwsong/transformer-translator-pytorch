@@ -9,8 +9,10 @@ import torch
 import sys, os
 import numpy as np
 import argparse
-import sentencepiece as spm
+from tensorboardX import SummaryWriter
 
+
+summary = SummaryWriter()
 
 class Manager():
     def __init__(self):
@@ -89,7 +91,13 @@ class Manager():
             mean_bleu_score = np.mean(train_bleu_scores)
             print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train BLEU score: {mean_bleu_score}")
 
+            summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
+            summary.add_scalar('bleu/train_bleu', mean_bleu_score, epoch)
+
             valid_loss, valid_bleu_score = self.validation()
+
+            summary.add_scalar('loss/valid_loss', valid_loss, epoch)
+            summary.add_scalar('bleu/valid_bleu', valid_bleu_score, epoch)
 
             if valid_loss < best_valid_loss:
                 if not os.path.exists(ckpt_dir):
