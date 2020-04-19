@@ -1,6 +1,6 @@
 from torch import nn
-from src.constants import *
-from src.layers import *
+from constants import *
+from layers import *
 
 import torch
 
@@ -17,7 +17,7 @@ class Transformer(nn.Module):
         self.encoder = Encoder()
         self.decoder = Decoder()
         self.output_linear = nn.Linear(d_model, self.tar_vocab_size)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, src_input, tar_input, encoder_mask, masked_attn_mask, attn_mask):
         src_embedded = self.src_embedding(src_input) # (B, L) => (B, L, d_model)

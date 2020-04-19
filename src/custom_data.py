@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.constants import *
+from constants import *
 
 import torch
 import sentencepiece as spm
@@ -89,9 +89,9 @@ def process_tar(text_list):
 class CustomDataset(Dataset):
     def __init__(self, src_list, tar_input_list, tar_output_list):
         super().__init__()
-        self.src_data = torch.FloatTensor(src_list)
-        self.tar_input_data = torch.FloatTensor(tar_input_list)
-        self.tar_output_data = torch.FloatTensor(tar_output_list)
+        self.src_data = torch.LongTensor(src_list)
+        self.tar_input_data = torch.LongTensor(tar_input_list)
+        self.tar_output_data = torch.LongTensor(tar_output_list)
 
         assert np.shape(src_list) == np.shape(tar_input_list), "The shape of src_list and tar_input_list are different."
         assert np.shape(tar_input_list) == np.shape(tar_output_list), "The shape of tar_input_list and tar_output_list are different."
@@ -113,4 +113,4 @@ class CustomDataset(Dataset):
                self.encoder_mask[idx], self.masked_attn_mask[idx], self.attn_mask[idx]
 
     def __len__(self):
-        return np.shape(self.src_list)[0]
+        return np.shape(self.src_data)[0]

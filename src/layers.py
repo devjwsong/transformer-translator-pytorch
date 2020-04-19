@@ -1,5 +1,5 @@
 from torch import nn
-from src.constants import *
+from constants import *
 
 import torch
 import math
@@ -54,10 +54,10 @@ class MultiheadAttention(nn.Module):
         self.w_v = nn.Linear(d_model, d_model)
 
         self.dropout = nn.Dropout(drop_out_rate)
-        self.attn_softmax = nn.Softmax()
+        self.attn_softmax = nn.Softmax(dim=-1)
 
         # Final output linear transformation
-        self.w_0 = nn.Parameter(d_model, d_model)
+        self.w_0 = nn.Linear(d_model, d_model)
 
     def forward(self, q, k, v, mask=None):
         # Linear calculation +  split into num_heads
@@ -72,7 +72,7 @@ class MultiheadAttention(nn.Module):
 
         # Conduct self-attention
         attn_values = self.self_attention(q, k, v, mask=mask) # (B, num_heads, L, d_k)
-        concat_output = attn_values.transpose(1, 2).view(batch_size, seq_len, d_k) # (B, L, num_heads * d_k) = (B, L, d_model)
+        concat_output = attn_values.transpose(1, 2).contiguous().view(batch_size, -1, d_model) # (B, L, num_heads, d_k) = (B, L, d_model)
 
         return concat_output
 
@@ -141,7 +141,7 @@ class PositionalEncoder(nn.Module):
         self.positional_encoding = pe_matrix.to(device=device).requires_grad_(False)
 
     def forward(self, x):
-        x *= math.sqrt(self.d_model) # (B, L, d_model)
+        x *= math.sqrt(d_model) # (B, L, d_model)
         x += self.positional_encoding # (B, L, d_model)
 
         return x

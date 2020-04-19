@@ -1,4 +1,4 @@
-from src.constants import *
+from constants import *
 
 import os
 import sentencepiece as spm
