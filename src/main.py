@@ -12,7 +12,7 @@ import argparse
 from tensorboardX import SummaryWriter
 
 
-summary = SummaryWriter()
+summary = SummaryWriter(summary_path)
 
 class Manager():
     def __init__(self):
