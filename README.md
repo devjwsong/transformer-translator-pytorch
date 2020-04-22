@@ -22,7 +22,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 2. Go to `src` directory and run `sp_process.py`.
 
    ```shell
-   python sp_process.py
+   python sentencepiece_train.py
    ```
 
    Then in `data` directory, there would be `sp` directory containing two sentencepiece models and two vocab files.

@@ -142,3 +142,6 @@ model/
 
 # tensorboard log
 runs/
+
+# nohup.out
+nohup.out
