@@ -63,7 +63,7 @@ class Manager():
             train_bleu_scores = []
             best_valid_loss = sys.float_info.max
 
-            for batch in tqdm(self.train_loader):
+            for i, batch in tqdm(enumerate(self.train_loader)):
                 src_input, tar_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = batch
                 src_input, tar_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = \
                     src_input.to(device), tar_input.to(device), tar_output.to(device),\
@@ -104,6 +104,7 @@ class Manager():
                     os.mkdir(ckpt_dir)
                 torch.save(self.model.state_dict(), f"{ckpt_dir}/best_model.pth")
                 print(f"Current best model is saved.")
+                best_valid_loss = valid_loss
 
             print(f"Best validation loss: {best_valid_loss}||Validation loss: {valid_loss}||Valid BLEU score: {valid_bleu_score}")
 

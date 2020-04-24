@@ -74,7 +74,7 @@ class MultiheadAttention(nn.Module):
         attn_values = self.self_attention(q, k, v, mask=mask) # (B, num_heads, L, d_k)
         concat_output = attn_values.transpose(1, 2).contiguous().view(batch_size, -1, d_model) # (B, L, num_heads, d_k) = (B, L, d_model)
 
-        return concat_output
+        return self.w_0(concat_output)
 
     def self_attention(self, q, k, v, mask=None):
         # Calculate attention scores with scaled dot-product attention
@@ -131,11 +131,10 @@ class PositionalEncoder(nn.Module):
         # Calculating position encoding values
         for pos in range(seq_len):
             for i in range(d_model):
-                k = i // 2
                 if i % 2 == 0:
-                    pe_matrix[pos, i] = math.sin(pos/(10000 ** (2 * k / d_model)))
+                    pe_matrix[pos, i] = math.sin(pos/(10000 ** (2 * i / d_model)))
                 elif i % 2 == 1:
-                    pe_matrix[pos, i] = math.cos(pos / (10000 ** (2 * k / d_model)))
+                    pe_matrix[pos, i] = math.cos(pos / (10000 ** (2 * i / d_model)))
 
         pe_matrix = pe_matrix.unsqueeze(0).repeat(batch_size, 1, 1)
         self.positional_encoding = pe_matrix.to(device=device).requires_grad_(False)
