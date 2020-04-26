@@ -63,7 +63,7 @@ class MultiheadAttention(nn.Module):
         # Linear calculation +  split into num_heads
         q = self.w_q(q).view(batch_size, seq_len, num_heads, d_k) # (B, L, num_heads, d_k)
         k = self.w_k(k).view(batch_size, seq_len, num_heads, d_k) # (B, L, num_heads, d_k)
-        v = self.w_k(v).view(batch_size, seq_len, num_heads, d_k) # (B, L, num_heads, d_k)
+        v = self.w_v(v).view(batch_size, seq_len, num_heads, d_k) # (B, L, num_heads, d_k)
 
         # For convenience, convert all tensors in size (B, num_heads, L, d_k)
         q = q.transpose(1, 2)
@@ -131,10 +131,11 @@ class PositionalEncoder(nn.Module):
         # Calculating position encoding values
         for pos in range(seq_len):
             for i in range(d_model):
+                k = i // 2
                 if i % 2 == 0:
-                    pe_matrix[pos, i] = math.sin(pos/(10000 ** (2 * i / d_model)))
+                    pe_matrix[pos, i] = math.sin(pos / (10000 ** (2 * k / d_model)))
                 elif i % 2 == 1:
-                    pe_matrix[pos, i] = math.cos(pos / (10000 ** (2 * i / d_model)))
+                    pe_matrix[pos, i] = math.cos(pos / (10000 ** (2 * k / d_model)))
 
         pe_matrix = pe_matrix.unsqueeze(0).repeat(batch_size, 1, 1)
         self.positional_encoding = pe_matrix.to(device=device).requires_grad_(False)

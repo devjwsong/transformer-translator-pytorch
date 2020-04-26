@@ -145,3 +145,6 @@ runs/
 
 # nohup.out
 nohup.out
+
+# jupyter notebook file
+run.ipynb
