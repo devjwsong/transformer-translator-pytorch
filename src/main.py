@@ -3,7 +3,7 @@ from constants import *
 from custom_data import *
 from transformer import *
 from torch import nn
-from torchtext.data import metrics
+from sklearn import metrics
 
 import torch
 import sys, os
@@ -22,26 +22,26 @@ class Manager():
 
         # Load vocabs
         print("Loading vocabs...")
-        self.src_i2v = {}
-        self.tar_i2v = {}
+        self.src_w2i = {}
+        self.tar_w2i = {}
 
         with open(f"{SP_DIR}/{src_model_prefix}.vocab") as f:
             lines = f.readlines()
         for i, line in enumerate(lines):
             word = line.strip().split('\t')[0]
-            self.src_i2v[i] = word
+            self.src_w2i[word] = i
 
         with open(f"{SP_DIR}/{tar_model_prefix}.vocab") as f:
             lines = f.readlines()
         for i, line in enumerate(lines):
             word = line.strip().split('\t')[0]
-            self.tar_i2v[i] = word
+            self.tar_w2i[word] = i
 
-        print(f"The size of src vocab is {len(self.src_i2v)} and that of tar vocab is {len(self.tar_i2v)}.")
+        print(f"The size of src vocab is {len(self.src_w2i)} and that of tar vocab is {len(self.tar_w2i)}.")
 
         # Load transformer model
         print("Loading Transformer model...")
-        self.model = Transformer(src_vocab_size=len(self.src_i2v), tar_vocab_size=len(self.tar_i2v)).to(device)
+        self.model = Transformer(src_vocab_size=len(self.src_w2i), tar_vocab_size=len(self.tar_w2i)).to(device)
 
         for p in self.model.parameters():
             if p.dim() > 1:
@@ -56,20 +56,22 @@ class Manager():
 
     def train(self):
         print("Training starts.")
+
+        best_valid_loss = sys.float_info.max
         for epoch in range(1, num_epochs+1):
             self.model.train()
 
             train_losses = []
-            train_bleu_scores = []
-            best_valid_loss = sys.float_info.max
+            train_pred_outputs = []
+            train_true_outputs = []
 
             for i, batch in tqdm(enumerate(self.train_loader)):
-                src_input, tar_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = batch
-                src_input, tar_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = \
+                src_input, tar_input, tar_output, encoder_mask, decoder_mask = batch
+                src_input, tar_input, tar_output, encoder_mask, decoder_mask = \
                     src_input.to(device), tar_input.to(device), tar_output.to(device),\
-                    encoder_mask.to(device), masked_attn_mask.to(device), attn_mask.to(device)
+                    encoder_mask.to(device), decoder_mask.to(device)
 
-                output = self.model(src_input, tar_input, encoder_mask, masked_attn_mask, attn_mask) # (B, L, vocab_size)
+                output = self.model(src_input, tar_input, encoder_mask, decoder_mask) # (B, L, vocab_size)
 
                 self.optim.zero_grad()
                 loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(batch_size * seq_len))
@@ -82,22 +84,22 @@ class Manager():
                 output_list = torch.argmax(output, dim=-1).tolist()
                 tar_output_list = tar_output.tolist()
 
-                decoded_output_list, decoded_tar_output_list = self.decode_tokens(output_list, tar_output_list)
+                trimmed_output_list, trimmed_tar_output_list = self.trim_output(output_list, tar_output_list)
 
-                train_bleu_score = metrics.bleu_score(decoded_output_list, decoded_tar_output_list, max_n=4)
-                train_bleu_scores.append(train_bleu_score)
+                train_pred_outputs += trimmed_output_list
+                train_true_outputs += trimmed_tar_output_list
 
             mean_train_loss = np.mean(train_losses)
-            mean_bleu_score = np.mean(train_bleu_scores)
-            print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train BLEU score: {mean_bleu_score}")
+            train_accuracy = metrics.accuracy_score(train_true_outputs, train_pred_outputs)
+            print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train accuracy: {train_accuracy}")
 
             summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
-            summary.add_scalar('bleu/train_bleu', mean_bleu_score, epoch)
+            summary.add_scalar('accuracy/train_accuracy', train_accuracy, epoch)
 
-            valid_loss, valid_bleu_score = self.validation()
+            valid_loss, valid_accuracy = self.validation()
 
             summary.add_scalar('loss/valid_loss', valid_loss, epoch)
-            summary.add_scalar('bleu/valid_bleu', valid_bleu_score, epoch)
+            summary.add_scalar('accuracy/valid_accuracy', valid_accuracy, epoch)
 
             if valid_loss < best_valid_loss:
                 if not os.path.exists(ckpt_dir):
@@ -106,7 +108,7 @@ class Manager():
                 print(f"Current best model is saved.")
                 best_valid_loss = valid_loss
 
-            print(f"Best validation loss: {best_valid_loss}||Validation loss: {valid_loss}||Valid BLEU score: {valid_bleu_score}")
+            print(f"Best validation loss: {best_valid_loss}||Validation loss: {valid_loss}||Valid accuracy: {valid_accuracy}")
 
         print(f"Training finished!")
 
@@ -115,14 +117,19 @@ class Manager():
         self.model.eval()
 
         valid_losses = []
-        valid_bleu_scores = []
-        for batch in tqdm(self.valid_loader):
-            src_input, tar_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = batch
-            src_input, tar_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = \
-                src_input.to(device), tar_input.to(device), tar_output.to(device), \
-                encoder_mask.to(device), masked_attn_mask.to(device), attn_mask.to(device)
+        valid_pred_outputs = []
+        valid_true_outputs = []
 
-            output = self.model(src_input, tar_input, encoder_mask, masked_attn_mask, attn_mask)  # (B, L, vocab_size)
+        for batch in tqdm(self.valid_loader):
+            src_input, _, tar_output, encoder_mask, _ = batch
+            src_input, tar_output, encoder_mask = \
+                src_input.to(device), tar_output.to(device), encoder_mask.to(device)
+
+            tar_input = torch.zeros(tar_output.shape[0], tar_output.shape[1]).long()
+            for seq in tar_input:
+                seq[0] = sos_id
+
+            output = self.model(src_input, tar_input, encoder_mask)  # (B, L, vocab_size)
             loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(batch_size * seq_len))
 
             valid_losses.append(loss.item())
@@ -130,15 +137,15 @@ class Manager():
             output_list = torch.argmax(output, dim=-1).tolist()
             tar_output_list = tar_output.tolist()
 
-            decoded_output_list, decoded_tar_output_list = self.decode_tokens(output_list, tar_output_list)
+            trimmed_output_list, trimmed_tar_output_list = self.trim_output(output_list, tar_output_list)
 
-            valid_bleu_score = metrics.bleu_score(decoded_output_list, decoded_tar_output_list, max_n=4)
-            valid_bleu_scores.append(valid_bleu_score)
+            valid_pred_outputs += trimmed_output_list
+            valid_true_outputs += trimmed_tar_output_list
 
         mean_valid_loss = np.mean(valid_losses)
-        mean_bleu_score = np.mean(valid_bleu_scores)
+        valid_accuracy = metrics.accuracy_score(valid_true_outputs, valid_pred_outputs)
 
-        return mean_valid_loss, mean_bleu_score
+        return mean_valid_loss, valid_accuracy
 
 
     def test(self, model_name):
@@ -150,49 +157,45 @@ class Manager():
         self.model.load_state_dict(torch.load(f"{ckpt_dir}/model_name"))
         self.model.eval()
 
-        test_bleu_scores = []
+        test_pred_outputs = []
+        test_true_outputs = []
         for batch in tqdm(self.test_loader):
-            src_input, _, tar_output, encoder_mask, masked_attn_mask, attn_mask = batch
-            src_input, tar_output, encoder_mask, masked_attn_mask, attn_mask = \
-                src_input.to(device), tar_output.to(device), \
-                encoder_mask.to(device), masked_attn_mask.to(device), attn_mask.to(device)
+            src_input, _, tar_output, encoder_mask, _ = batch
+            src_input, tar_output, encoder_mask = \
+                src_input.to(device), tar_output.to(device), encoder_mask.to(device)
 
             tar_input = torch.zeros(tar_output.shape[0], tar_output.shape[1]).long()
             for seq in tar_input:
                 seq[0] = sos_id
 
-            output = self.model(src_input, tar_input, encoder_mask, masked_attn_mask, attn_mask)  # (B, L, vocab_size)
+            output = self.model(src_input, tar_input, encoder_mask)  # (B, L, vocab_size)
             output = torch.argmax(output, dim=-1) # (B, L)
 
             output_list = output.tolist()
             tar_output_list = tar_output.tolist()
 
-            decoded_output_list, decoded_tar_output_list = self.decode_tokens(output_list, tar_output_list)
+            trimmed_output_list, trimmed_tar_output_list = self.trim_output(output_list, tar_output_list)
 
-            test_bleu_score = metrics.bleu_score(decoded_output_list, decoded_tar_output_list, max_n=4)
-            test_bleu_scores.append(test_bleu_score)
+            test_pred_outputs += trimmed_output_list
+            test_true_outputs += trimmed_tar_output_list
 
-        mean_bleu_score = np.mean(test_bleu_scores)
+        test_accuracy = metrics.accuracy_score(test_true_outputs, test_pred_outputs)
 
-        print(f"Testing finished! Test BLEU score: {mean_bleu_score}")
+        print(f"Testing finished! Test accuracy: {test_accuracy}")
 
 
-    def decode_tokens(self, output_list, tar_output_list):
-        decoded_output_list = []
-        decoded_tar_output_list = []
+    def trim_output(self, output_list, tar_output_list):
+        trimmed_output_list = []
+        trimmed_tar_output_list = []
         for i in range(len(output_list)):
             tar_output = [idx for idx in tar_output_list[i] if idx != pad_id]
             original_len = len(tar_output)
-            output = [idx for i, idx in enumerate(output_list[i]) if i<original_len]
+            output = [idx for j, idx in enumerate(output_list[i]) if j<original_len]
 
-            decoded_output = [self.tar_i2v[idx] for idx in output]
-            decoded_tar_output = [self.tar_i2v[idx] for idx in tar_output]
+            trimmed_output_list.append(output)
+            trimmed_tar_output_list.append(tar_output)
 
-            decoded_output_list.append(decoded_output)
-            decoded_tar_output_list.append(decoded_tar_output)
-
-        return decoded_output_list, decoded_tar_output_list
-
+        return trimmed_output_list, trimmed_tar_output_list
 
 
 if __name__=='__main__':

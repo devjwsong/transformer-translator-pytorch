@@ -96,21 +96,21 @@ class CustomDataset(Dataset):
         assert np.shape(src_list) == np.shape(tar_input_list), "The shape of src_list and tar_input_list are different."
         assert np.shape(tar_input_list) == np.shape(tar_output_list), "The shape of tar_input_list and tar_output_list are different."
 
-        self.encoder_mask, self.masked_attn_mask, self.attn_mask = self.make_mask()
+        self.encoder_mask, self.decoder_mask = self.make_mask()
 
     def make_mask(self):
         encoder_mask = (self.src_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
-        attn_mask = (self.tar_input_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
+        decoder_mask = (self.tar_output_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
 
-        masked_attn_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool) # (1, L, L)
-        masked_attn_mask = torch.tril(masked_attn_mask) # (1, L, L) to triangular shape
-        masked_attn_mask = attn_mask & masked_attn_mask # (num_samples, L, L) padding false
+        blind_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool) # (1, L, L)
+        blind_mask = torch.tril(blind_mask) # (1, L, L) to triangular shape
+        decoder_mask = decoder_mask & blind_mask # (num_samples, L, L) padding false
 
-        return encoder_mask, masked_attn_mask, attn_mask
+        return encoder_mask, decoder_mask
 
     def __getitem__(self, idx):
         return self.src_data[idx], self.tar_input_data[idx], self.tar_output_data[idx], \
-               self.encoder_mask[idx], self.masked_attn_mask[idx], self.attn_mask[idx]
+               self.encoder_mask[idx], self.decoder_mask[idx]
 
     def __len__(self):
         return np.shape(self.src_data)[0]

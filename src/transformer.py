@@ -19,14 +19,14 @@ class Transformer(nn.Module):
         self.output_linear = nn.Linear(d_model, self.tar_vocab_size)
         self.softmax = nn.LogSoftmax(dim=-1)
 
-    def forward(self, src_input, tar_input, encoder_mask, masked_attn_mask, attn_mask):
+    def forward(self, src_input, tar_input, encoder_mask=None, decoder_mask=None):
         src_embedded = self.src_embedding(src_input) # (B, L) => (B, L, d_model)
         tar_embedded = self.tar_embedding(tar_input) # (B, L) => (B, L, d_model)
         src_positional_encoded = self.positional_encoder(src_embedded) # (B, L, d_model) => (B, L, d_model)
         tar_positional_encoded = self.positional_encoder(tar_embedded) # (B, L, d_model) => (B, L, d_model)
 
         encoder_output = self.encoder(src_positional_encoded, encoder_mask) # (B, L, d_model)
-        decoder_output = self.decoder(tar_positional_encoded, encoder_output, masked_attn_mask, attn_mask) # (B, L, d_model)
+        decoder_output = self.decoder(tar_positional_encoded, encoder_output, encoder_mask, decoder_mask) # (B, L, d_model)
 
         output = self.softmax(self.output_linear(decoder_output)) # (B, L, d_model) => # (B, L, tar_vocab_size)
 
@@ -50,8 +50,8 @@ class Decoder(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList([DecoderLayer() for i in range(num_layers)])
 
-    def forward(self, x, encoder_output, masked_attn_mask, attn_mask):
+    def forward(self, x, encoder_output, encoder_mask, decoder_mask):
         for i in range(num_layers):
-            x = self.layers[i](x, encoder_output, masked_attn_mask, attn_mask)
+            x = self.layers[i](x, encoder_output, encoder_mask, decoder_mask)
 
         return x

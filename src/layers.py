@@ -8,39 +8,51 @@ import math
 class EncoderLayer(nn.Module):
     def __init__(self):
         super().__init__()
-        self.multihead_attention = MultiheadAttention()
         self.layer_norm_1 = LayerNormalization()
-        self.feed_forward = FeedFowardLayer()
+        self.multihead_attention = MultiheadAttention()
+        self.drop_out_1 = nn.Dropout(drop_out_rate)
+
         self.layer_norm_2 = LayerNormalization()
+        self.feed_forward = FeedFowardLayer()
+        self.drop_out_2 = nn.Dropout(drop_out_rate)
+
+        self.layer_norm_3 = LayerNormalization()
 
     def forward(self, x, encoder_mask):
-        after_attn = self.multihead_attention(x, x, x, mask=encoder_mask) # (B, L, d_model) => (B, L, d_model)
-        after_norm_1 = self.layer_norm_1(after_attn + x) # (B, L, d_model) => (B, L, d_model)
-        after_ff = self.feed_forward(after_norm_1) # (B, L, d_model) => (B, L, d_ff) => (B, L, d_model)
-        after_norm_2 = self.layer_norm_2(after_ff + after_norm_1) # (B, L, d_model) => (B, L, d_model)
+        after_norm_1 = self.layer_norm_1(x) # (B, L, d_model)
+        x += self.drop_out_1(self.multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=encoder_mask)) # (B, L, d_model)
+        after_norm_2 = self.layer_norm_2(x) # (B, L, d_model)
+        x += self.drop_out_2(self.feed_forward(after_norm_2)) # (B, L, d_model)
 
-        return after_norm_2
+        return self.layer_norm_3(x) # (B, L, d_model)
 
 
 class DecoderLayer(nn.Module):
     def __init__(self):
         super().__init__()
+        self.layer_norm_1 = LayerNormalization()
         self.masked_multihead_attention = MultiheadAttention()
-        self.layer_norm1 = LayerNormalization()
+        self.drop_out_1 = nn.Dropout(drop_out_rate)
+
+        self.layer_norm_2 = LayerNormalization()
         self.multihead_attention = MultiheadAttention()
-        self.layer_norm2 = LayerNormalization()
+        self.drop_out_2 = nn.Dropout(drop_out_rate)
+
+        self.layer_norm_3 = LayerNormalization()
         self.feed_forward = FeedFowardLayer()
-        self.layer_norm3 = LayerNormalization()
+        self.drop_out_3 = nn.Dropout(drop_out_rate)
 
-    def forward(self, x, encoder_output, masked_attn_mask, attn_mask):
-        after_masked_attn = self.masked_multihead_attention(x, x, x, mask=masked_attn_mask) # (B, L, d_model) => (B, L, d_model)
-        after_norm_1 = self.layer_norm1(after_masked_attn + x) # (B, L, d_model) => (B, L, d_model)
-        after_attn = self.multihead_attention(after_norm_1, encoder_output, encoder_output, mask=attn_mask) # (B, L, d_model) => (B, L, d_model)
-        after_norm_2 = self.layer_norm2(after_attn + after_norm_1) # (B, L, d_model) => (B, L, d_model)
-        after_ff = self.feed_forward(after_norm_2) # (B, L, d_model) => (B, L, d_ff) => (B, L, d_model)
-        after_norm_3 = self.layer_norm3(after_ff + after_norm_2) # (B, L, d_model) => (B, L, d_model)
+        self.layer_norm_4 = LayerNormalization()
 
-        return after_norm_3
+    def forward(self, x, encoder_output, encoder_mask,  decoder_mask):
+        after_norm_1 = self.layer_norm_1(x) # (B, L, d_model)
+        x += self.drop_out_1(self.masked_multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=decoder_mask)) # (B, L, d_model)
+        after_norm_2 = self.layer_norm_2(x) # (B, L, d_model)
+        x += self.drop_out_2(self.multihead_attention(after_norm_2, encoder_output, encoder_output, mask=encoder_mask)) # (B, L, d_model)
+        after_norm_3 = self.layer_norm_3(x) # (B, L, d_model)
+        x += self.drop_out_3(self.feed_forward(after_norm_3)) # (B, L, d_model)
+
+        return self.layer_norm_4(x) # (B, L, d_model)
 
 
 class MultiheadAttention(nn.Module):

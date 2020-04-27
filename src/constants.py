@@ -19,7 +19,7 @@ model_type = 'bpe'
 
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-learning_rate = 0.0001
+learning_rate = 0.00001
 batch_size = 8
 seq_len = 320
 num_heads = 8
@@ -28,7 +28,7 @@ d_model = 512
 d_ff = 2048
 d_k = d_model // num_heads
 drop_out_rate = 0.1
-num_epochs = 50
+num_epochs = 20
 ckpt_dir = 'saved_model'
 
 # Path for tensorboard
