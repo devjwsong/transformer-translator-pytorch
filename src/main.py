@@ -89,7 +89,7 @@ class Manager():
                 train_accuracies.append(train_accuracy)
 
             mean_train_loss = np.mean(train_losses)
-            mean_train_accuracy = np.eman(train_accuracies)
+            mean_train_accuracy = np.mean(train_accuracies)
             print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train accuracy: {mean_train_accuracy}")
 
             summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
