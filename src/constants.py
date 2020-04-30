@@ -19,8 +19,8 @@ model_type = 'bpe'
 
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-learning_rate = 0.00001
-batch_size = 8
+learning_rate = 0.0001
+batch_size = 32
 seq_len = 320
 num_heads = 8
 num_layers = 6
