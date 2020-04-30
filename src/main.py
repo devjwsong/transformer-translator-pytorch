@@ -72,8 +72,9 @@ class Manager():
 
                 output = self.model(src_input, tar_input, encoder_mask, decoder_mask) # (B, L, vocab_size)
 
+                tar_output_shape = tar_output.shape
                 self.optim.zero_grad()
-                loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(batch_size * seq_len))
+                loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(tar_output_shape[0] * tar_output_shape[1]))
 
                 loss.backward()
                 self.optim.step()
@@ -128,8 +129,9 @@ class Manager():
                 seq[0] = sos_id
             tar_input = tar_input.to(device)
 
+            tar_output_shape = tar_output.shape
             output = self.model(src_input, tar_input, encoder_mask)  # (B, L, vocab_size)
-            loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(batch_size * seq_len))
+            loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(tar_output_shape[0] * tar_output_shape[1]))
 
             valid_losses.append(loss.item())
 
