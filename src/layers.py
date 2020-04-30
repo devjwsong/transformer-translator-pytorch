@@ -20,9 +20,9 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, encoder_mask):
         after_norm_1 = self.layer_norm_1(x) # (B, L, d_model)
-        x += self.drop_out_1(self.multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=encoder_mask)) # (B, L, d_model)
+        x = x + self.drop_out_1(self.multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=encoder_mask)) # (B, L, d_model)
         after_norm_2 = self.layer_norm_2(x) # (B, L, d_model)
-        x += self.drop_out_2(self.feed_forward(after_norm_2)) # (B, L, d_model)
+        x = x + self.drop_out_2(self.feed_forward(after_norm_2)) # (B, L, d_model)
 
         return self.layer_norm_3(x) # (B, L, d_model)
 
@@ -46,11 +46,11 @@ class DecoderLayer(nn.Module):
 
     def forward(self, x, encoder_output, encoder_mask,  decoder_mask):
         after_norm_1 = self.layer_norm_1(x) # (B, L, d_model)
-        x += self.drop_out_1(self.masked_multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=decoder_mask)) # (B, L, d_model)
+        x = x + self.drop_out_1(self.masked_multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=decoder_mask)) # (B, L, d_model)
         after_norm_2 = self.layer_norm_2(x) # (B, L, d_model)
-        x += self.drop_out_2(self.multihead_attention(after_norm_2, encoder_output, encoder_output, mask=encoder_mask)) # (B, L, d_model)
+        x = x + self.drop_out_2(self.multihead_attention(after_norm_2, encoder_output, encoder_output, mask=encoder_mask)) # (B, L, d_model)
         after_norm_3 = self.layer_norm_3(x) # (B, L, d_model)
-        x += self.drop_out_3(self.feed_forward(after_norm_3)) # (B, L, d_model)
+        x = x + self.drop_out_3(self.feed_forward(after_norm_3)) # (B, L, d_model)
 
         return self.layer_norm_4(x) # (B, L, d_model)
 
@@ -153,7 +153,7 @@ class PositionalEncoder(nn.Module):
         self.positional_encoding = pe_matrix.to(device=device).requires_grad_(False)
 
     def forward(self, x):
-        x *= math.sqrt(d_model) # (B, L, d_model)
-        x += self.positional_encoding # (B, L, d_model)
+        x = x * math.sqrt(d_model) # (B, L, d_model)
+        x = x + self.positional_encoding # (B, L, d_model)
 
         return x
