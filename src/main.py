@@ -126,6 +126,7 @@ class Manager():
             tar_input = torch.zeros(tar_output.shape[0], tar_output.shape[1]).long()
             for seq in tar_input:
                 seq[0] = sos_id
+            tar_input = tar_input.to(device)
 
             output = self.model(src_input, tar_input, encoder_mask)  # (B, L, vocab_size)
             loss = self.criterion(output.view(-1, sp_vocab_size), tar_output.view(batch_size * seq_len))
@@ -165,6 +166,7 @@ class Manager():
             tar_input = torch.zeros(tar_output.shape[0], tar_output.shape[1]).long()
             for seq in tar_input:
                 seq[0] = sos_id
+            tar_input = tar_input.to(device)
 
             output = self.model(src_input, tar_input, encoder_mask)  # (B, L, vocab_size)
             output = torch.argmax(output, dim=-1) # (B, L)
