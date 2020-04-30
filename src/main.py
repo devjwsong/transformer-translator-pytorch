@@ -4,13 +4,13 @@ from custom_data import *
 from transformer import *
 from torch import nn
 from sklearn import metrics
+from sklearn.preprocessing import MultiLabelBinarizer
+from tensorboardX import SummaryWriter
 
 import torch
 import sys, os
 import numpy as np
 import argparse
-from tensorboardX import SummaryWriter
-
 
 summary = SummaryWriter(summary_path)
 
@@ -90,6 +90,8 @@ class Manager():
                 train_true_outputs += trimmed_tar_output_list
 
             mean_train_loss = np.mean(train_losses)
+            train_true_outputs = MultiLabelBinarizer().fit_transform(train_true_outputs)
+            train_pred_outputs = MultiLabelBinarizer().fit_transform(train_pred_outputs)
             train_accuracy = metrics.accuracy_score(train_true_outputs, train_pred_outputs)
             print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train accuracy: {train_accuracy}")
 
@@ -143,6 +145,9 @@ class Manager():
             valid_true_outputs += trimmed_tar_output_list
 
         mean_valid_loss = np.mean(valid_losses)
+
+        valid_true_outputs = MultiLabelBinarizer().fit_transform(valid_true_outputs)
+        valid_pred_outputs = MultiLabelBinarizer().fit_transform(valid_pred_outputs)
         valid_accuracy = metrics.accuracy_score(valid_true_outputs, valid_pred_outputs)
 
         return mean_valid_loss, valid_accuracy
@@ -179,6 +184,8 @@ class Manager():
             test_pred_outputs += trimmed_output_list
             test_true_outputs += trimmed_tar_output_list
 
+        test_true_outputs = MultiLabelBinarizer().fit_transform(test_true_outputs)
+        test_pred_outputs = MultiLabelBinarizer().fit_transform(test_pred_outputs)
         test_accuracy = metrics.accuracy_score(test_true_outputs, test_pred_outputs)
 
         print(f"Testing finished! Test accuracy: {test_accuracy}")
