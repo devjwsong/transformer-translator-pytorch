@@ -62,8 +62,7 @@ class Manager():
             self.model.train()
 
             train_losses = []
-            train_pred_outputs = []
-            train_true_outputs = []
+            train_accuracies = []
 
             for i, batch in tqdm(enumerate(self.train_loader)):
                 src_input, tar_input, tar_output, encoder_mask, decoder_mask = batch
@@ -86,14 +85,12 @@ class Manager():
 
                 trimmed_output_list, trimmed_tar_output_list = self.trim_output(output_list, tar_output_list)
 
-                train_pred_outputs += trimmed_output_list
-                train_true_outputs += trimmed_tar_output_list
+                train_accuracy = metrics.accuracy_score(trimmed_tar_output_list, trimmed_output_list)
+                train_accuracies.append(train_accuracy)
 
             mean_train_loss = np.mean(train_losses)
-            train_true_outputs = MultiLabelBinarizer().fit_transform(train_true_outputs)
-            train_pred_outputs = MultiLabelBinarizer().fit_transform(train_pred_outputs)
-            train_accuracy = metrics.accuracy_score(train_true_outputs, train_pred_outputs)
-            print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train accuracy: {train_accuracy}")
+            mean_train_accuracy = np.eman(train_accuracies)
+            print(f"Epoch: {epoch}||Train loss: {mean_train_loss}||Train accuracy: {mean_train_accuracy}")
 
             summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
             summary.add_scalar('accuracy/train_accuracy', train_accuracy, epoch)
@@ -119,8 +116,7 @@ class Manager():
         self.model.eval()
 
         valid_losses = []
-        valid_pred_outputs = []
-        valid_true_outputs = []
+        valid_accuracies = []
 
         for batch in tqdm(self.valid_loader):
             src_input, _, tar_output, encoder_mask, _ = batch
@@ -141,16 +137,13 @@ class Manager():
 
             trimmed_output_list, trimmed_tar_output_list = self.trim_output(output_list, tar_output_list)
 
-            valid_pred_outputs += trimmed_output_list
-            valid_true_outputs += trimmed_tar_output_list
+            valid_accuracy = metrics.accuracy_score(trimmed_tar_output_list, trimmed_output_list)
+            valid_accuracies.append(valid_accuracy)
 
         mean_valid_loss = np.mean(valid_losses)
+        mean_valid_accuracy = np.mean(valid_accuracies)
 
-        valid_true_outputs = MultiLabelBinarizer().fit_transform(valid_true_outputs)
-        valid_pred_outputs = MultiLabelBinarizer().fit_transform(valid_pred_outputs)
-        valid_accuracy = metrics.accuracy_score(valid_true_outputs, valid_pred_outputs)
-
-        return mean_valid_loss, valid_accuracy
+        return mean_valid_loss, mean_valid_accuracy
 
 
     def test(self, model_name):
@@ -162,8 +155,8 @@ class Manager():
         self.model.load_state_dict(torch.load(f"{ckpt_dir}/model_name"))
         self.model.eval()
 
-        test_pred_outputs = []
-        test_true_outputs = []
+        test_accuracies = []
+
         for batch in tqdm(self.test_loader):
             src_input, _, tar_output, encoder_mask, _ = batch
             src_input, tar_output, encoder_mask = \
@@ -181,14 +174,12 @@ class Manager():
 
             trimmed_output_list, trimmed_tar_output_list = self.trim_output(output_list, tar_output_list)
 
-            test_pred_outputs += trimmed_output_list
-            test_true_outputs += trimmed_tar_output_list
+            test_accuracy = metrics.accuracy_score(trimmed_tar_output_list, trimmed_output_list)
+            test_accuracies.append(test_accuracy)
 
-        test_true_outputs = MultiLabelBinarizer().fit_transform(test_true_outputs)
-        test_pred_outputs = MultiLabelBinarizer().fit_transform(test_pred_outputs)
-        test_accuracy = metrics.accuracy_score(test_true_outputs, test_pred_outputs)
+        mean_test_accuracy = np.mean(test_accuracies)
 
-        print(f"Testing finished! Test accuracy: {test_accuracy}")
+        print(f"Testing finished! Test accuracy: {mean_test_accuracy}")
 
 
     def trim_output(self, output_list, tar_output_list):
@@ -199,8 +190,8 @@ class Manager():
             original_len = len(tar_output)
             output = [idx for j, idx in enumerate(output_list[i]) if j<original_len]
 
-            trimmed_output_list.append(output)
-            trimmed_tar_output_list.append(tar_output)
+            trimmed_output_list += output
+            trimmed_tar_output_list += tar_output
 
         return trimmed_output_list, trimmed_tar_output_list
 
