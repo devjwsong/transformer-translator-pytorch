@@ -18,7 +18,7 @@ class Manager():
     def __init__(self):
         # Load dataloaders
         print("Loading dataloaders...")
-        self.train_loader, self.valid_loader, self.test_loader = get_data_loader()
+        self.train_loader = get_data_loader()
 
         # Load vocabs
         print("Loading vocabs...")
@@ -118,8 +118,7 @@ class Manager():
         self.model.eval()
 
         start_time = datetime.datetime.now()
-        for batch in tqdm(self.test_loader):
-            pass
+        ###################################
 
         end_time = datetime.datetime.now()
 

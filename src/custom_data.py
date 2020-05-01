@@ -25,7 +25,8 @@ def get_data_loader():
 
     print("Tokenizing & Padding trg data...")
     input_trg_list, output_trg_list = process_trg(trg_text_list) # (sample_num, L)
-    print(f"The shape of trg data: {np.shape(trg_list)}")
+    print(f"The shape of input trg data: {np.shape(input_trg_list)}")
+    print(f"The shape of output trg data: {np.shape(output_trg_list)}")
 
     dataset = CustomDataset(src_list, input_trg_list, output_trg_list)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
