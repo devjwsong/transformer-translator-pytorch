@@ -3,7 +3,6 @@ from constants import *
 from custom_data import *
 from transformer import *
 from torch import nn
-from sklearn import metrics
 from tensorboardX import SummaryWriter
 
 import torch
@@ -11,6 +10,7 @@ import sys, os
 import numpy as np
 import argparse
 import datetime
+import sentencepiece as spm
 
 summary = SummaryWriter(summary_path)
 
@@ -85,7 +85,7 @@ class Manager():
             end_time = datetime.datetime.now()
             training_time = end_time - start_time
             minutes = training_time.seconds // 60
-            seconds = training_time.seconds
+            seconds = training_time.seconds % 60
 
             mean_train_loss = np.mean(train_losses)
             print(f"#################### Epoch: {epoch} ####################")
@@ -102,13 +102,15 @@ class Manager():
 
             total_training_time += training_time
 
-        hours = total_training_time.seconds // 3600
-        minutes = total_training_time.seconds // 60
         seconds = total_training_time.seconds
+        hours = seconds // 3600
+        seconds = seconds % 3600
+        minutes = seconds // 60
+        seconds = seconds % 60
         print(f"Training finished! || Total training time: {hours}hrs {minutes}mins {seconds}secs")
 
 
-    def test(self, model_name):
+    def test(self, model_name, input_sentence):
         if not os.path.exists(f"{ckpt_dir}/{model_name}"):
             print(f"There is no model named {model_name}. Test aborted.")
             return
@@ -117,23 +119,67 @@ class Manager():
         self.model.load_state_dict(torch.load(f"{ckpt_dir}/model_name"))
         self.model.eval()
 
+        print("Loading sentencepiece tokenizer...")
+        src_sp = spm.SentencePieceProcessor()
+        trg_sp = spm.SentencePieceProcessor()
+        src_sp.Load(f"{SP_DIR}/{src_model_prefix}.model")
+        trg_sp.Load(f"{SP_DIR}/{trg_model_prefix}.model")
+
+        print("Preprocessing input sentence...")
+        tokenized = src_sp.EncodeAsIds(input_sentence)
+        src_data = torch.LongTensor(tokenized).unsqueeze(0).to(device) # (1, L)
+        encoder_mask = (src_data != pad_id).unsqueeze(1).to(device) # (1, 1, L)
+
         start_time = datetime.datetime.now()
-        ###################################
+
+        print("Encoding input sentence...")
+        src_embedded = self.model.src_embedding(src_data)
+        src_positional_encoded = self.model.positional_encoder(src_embedded)
+        encoder_output = self.model.encoder(src_positional_encoded, encoder_mask) # (1, L, d_model)
+
+        outputs = torch.zeros(seq_len).long() # (L)
+        outputs[0] = sos_id # (L)
+        output_len = 0
+
+        for i in range(1, seq_len):
+            decoder_mask = (outputs.unsqueeze(0) != pad_id).unsqueeze(1) # (1, 1, L)
+            nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool)  # (1, L, L)
+            nopeak_mask = torch.tril(nopeak_mask)  # (1, L, L) to triangular shape
+            decoder_mask = decoder_mask & nopeak_mask  # (1, L, L) padding false
+
+            trg_embedded = self.model.trg_embedding(outputs.unsqueeze(0))
+            trg_positional_encoded = self.model.positional_encoder(trg_embedded)
+            decoder_output = self.model.decoder(trg_positional_encoded, encoder_output, encoder_mask, decoder_mask) # (1, L, d_model)
+
+            output = self.model.softmax(self.model.output_linear(decoder_output)) # (1, L, trg_vocab_size)
+            output = torch.argmax(output, dim=-1) # (1, L)
+            last_word_id = output[0][-1]
+
+            if last_word_id == eos_id:
+                break
+
+            outputs[i] = last_word_id
+            output_len = i
+
+        decoded_output = outputs[1:][:output_len].tolist()
+        decoded_output = trg_sp.decode_ids(decoded_output)
 
         end_time = datetime.datetime.now()
 
         total_testing_time = end_time - start_time
-        hours = total_testing_time.seconds // 3600
-        minutes = total_testing_time.seconds // 60
         seconds = total_testing_time.seconds
+        minutes = seconds // 60
+        seconds = seconds % 60
 
-        print(f"Testing finished! || Total testing time: {hours}hrs {minutes}mins {seconds}secs")
+        print(f"Result: {decoded_output}")
+        print(f"Testing finished! || Total testing time: {minutes}mins {seconds}secs")
 
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', required=True, help="train or test?")
     parser.add_argument('--model_name', required=False, help="trained model file to test")
+    parser.add_argument('--input', type=str, required=False, help="input sentence when testing")
 
     args = parser.parse_args()
 
@@ -145,6 +191,9 @@ if __name__=='__main__':
         if args.model_name is None:
             print("Please specify the model file.")
         else:
-            manager.test(args.model_name)
+            if args.input is None:
+                print("Please input a source sentence.")
+            else:
+                manager.test(args.model_name, args.input)
     else:
         print("Please specify mode argument either with 'train' or 'test'.")
