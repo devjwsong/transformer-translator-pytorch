@@ -4,7 +4,7 @@ import torch
 DATA_DIR = 'data'
 SP_DIR = 'data/sp'
 SRC_DATA_NAME = 'full_data.en'
-TAR_DATA_NAME = 'full_data.fr'
+trg_DATA_NAME = 'full_data.fr'
 
 # Parameters for sentencepiece tokenizer
 pad_id = 0
@@ -12,7 +12,7 @@ sos_id = 1
 eos_id = 2
 unk_id = 3
 src_model_prefix = 'src_sp'
-tar_model_prefix = 'tar_sp'
+trg_model_prefix = 'trg_sp'
 sp_vocab_size = 16000
 character_coverage = 1.0
 model_type = 'bpe'

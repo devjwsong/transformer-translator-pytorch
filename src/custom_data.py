@@ -7,47 +7,30 @@ import sentencepiece as spm
 import numpy as np
 
 src_sp = spm.SentencePieceProcessor()
-tar_sp = spm.SentencePieceProcessor()
+trg_sp = spm.SentencePieceProcessor()
 src_sp.Load(f"{SP_DIR}/{src_model_prefix}.model")
-tar_sp.Load(f"{SP_DIR}/{tar_model_prefix}.model")
-
-train_frac = 0.8
-valid_test_split_frac = 0.1
+trg_sp.Load(f"{SP_DIR}/{trg_model_prefix}.model")
 
 
 def get_data_loader():
     with open(f"{DATA_DIR}/{SRC_DATA_NAME}", 'r') as f:
         src_text_list = f.readlines()
 
-    with open(f"{DATA_DIR}/{TAR_DATA_NAME}", 'r') as f:
-        tar_text_list = f.readlines()
+    with open(f"{DATA_DIR}/{trg_DATA_NAME}", 'r') as f:
+        trg_text_list = f.readlines()
 
-    src__list = process_src(src_text_list) # (sample_num, L)
-    tar_input_list, tar_output_list = process_tar(tar_text_list) # (sample_num, L)
+    print("Tokenizing & Padding src data...")
+    src_list = process_src(src_text_list) # (sample_num, L)
+    print(f"The shape of src data: {np.shape(src_list)}")
 
-    src_train_list, src_valid_list, src_test_list = split_data(src__list)
-    tar_input_train_list, tar_input_valid_list, tar_input_test_list = split_data(tar_input_list)
-    tar_output_train_list, tar_output_valid_list, tar_output_test_list = split_data(tar_output_list)
+    print("Tokenizing & Padding trg data...")
+    input_trg_list, output_trg_list = process_trg(trg_text_list) # (sample_num, L)
+    print(f"The shape of trg data: {np.shape(trg_list)}")
 
-    train_dataset = CustomDataset(src_train_list, tar_input_train_list, tar_output_train_list)
-    valid_dataset = CustomDataset(src_valid_list, tar_input_valid_list, tar_output_valid_list)
-    test_dataset = CustomDataset(src_test_list, tar_input_test_list, tar_output_test_list)
+    dataset = CustomDataset(src_list, input_trg_list, output_trg_list)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-
-    return train_loader, valid_loader, test_loader
-
-
-def split_data(data_list):
-    train_list = data_list[:int(len(data_list) * train_frac)]
-    remained_list = data_list[int(len(data_list) * train_frac):]
-
-    valid_list = remained_list[:int(len(remained_list) * valid_test_split_frac)]
-    test_list = remained_list[int(len(remained_list) * valid_test_split_frac):]
-
-    return train_list, valid_list, test_list
+    return dataloader
 
 
 def add_padding(tokenized_text):
@@ -60,57 +43,51 @@ def add_padding(tokenized_text):
 
 
 def process_src(text_list):
-    print("Tokenizing & Padding src data...")
     tokenized_list = []
     for text in tqdm(text_list):
         tokenized = src_sp.EncodeAsIds(text.strip())
         tokenized_list.append(add_padding(tokenized))
 
-    print(f"The shape of src data: {np.shape(tokenized_list)}")
     return tokenized_list
 
-
-def process_tar(text_list):
-    print("Tokenizing & Padding tar data...")
-    input_list = []
-    output_list = []
+def process_trg(text_list):
+    input_tokenized_list = []
+    output_tokenized_list = []
     for text in tqdm(text_list):
-        tokenized = tar_sp.EncodeAsIds(text.strip())
-        input_tokenized = [sos_id] + tokenized
-        output_tokenized = tokenized + [eos_id]
-        input_list.append(add_padding(input_tokenized))
-        output_list.append(add_padding(output_tokenized))
+        tokenized = trg_sp.EncodeAsIds(text.strip())
+        trg_input = [sos_id] + tokenized[:-1]
+        trg_output = tokenized[1:] + [eos_id]
+        input_tokenized_list.append(add_padding(trg_input))
+        output_tokenized_list.append(add_padding(trg_output))
 
-    print(f"The shape of tar(input) data: {np.shape(input_list)}")
-    print(f"The shape of tar(output) data: {np.shape(output_list)}")
-    return input_list, output_list
+    return input_tokenized_list, output_tokenized_list
 
 
 class CustomDataset(Dataset):
-    def __init__(self, src_list, tar_input_list, tar_output_list):
+    def __init__(self, src_list, input_trg_list, output_trg_list):
         super().__init__()
         self.src_data = torch.LongTensor(src_list)
-        self.tar_input_data = torch.LongTensor(tar_input_list)
-        self.tar_output_data = torch.LongTensor(tar_output_list)
+        self.input_trg_data = torch.LongTensor(input_trg_list)
+        self.output_trg_data = torch.LongTensor(output_trg_list)
 
-        assert np.shape(src_list) == np.shape(tar_input_list), "The shape of src_list and tar_input_list are different."
-        assert np.shape(tar_input_list) == np.shape(tar_output_list), "The shape of tar_input_list and tar_output_list are different."
+        assert np.shape(src_list) == np.shape(input_trg_list), "The shape of src_list and input_trg_list are different."
+        assert np.shape(input_trg_list) == np.shape(output_trg_list), "The shape of input_trg_list and output_trg_list are different."
 
         self.encoder_mask, self.decoder_mask = self.make_mask()
 
     def make_mask(self):
         encoder_mask = (self.src_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
-        decoder_mask = (self.tar_output_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
+        decoder_mask = (self.input_trg_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
 
-        blind_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool) # (1, L, L)
-        blind_mask = torch.tril(blind_mask) # (1, L, L) to triangular shape
-        decoder_mask = decoder_mask & blind_mask # (num_samples, L, L) padding false
+        nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool) # (1, L, L)
+        nopeak_mask = torch.tril(nopeak_mask) # (1, L, L) to triangular shape
+        decoder_mask = decoder_mask & nopeak_mask # (num_samples, L, L) padding false
 
         return encoder_mask, decoder_mask
 
     def __getitem__(self, idx):
-        return self.src_data[idx], self.tar_input_data[idx], self.tar_output_data[idx], \
-               self.encoder_mask[idx], self.decoder_mask[idx]
+        return self.src_data[idx], self.input_trg_data[idx], self.output_trg_data[idx], \
+        self.encoder_mask[idx], self.decoder_mask[idx]
 
     def __len__(self):
         return np.shape(self.src_data)[0]
