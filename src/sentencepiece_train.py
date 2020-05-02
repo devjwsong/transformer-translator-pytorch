@@ -18,8 +18,8 @@ def train_sp(is_src=True):
         this_input_file = f"{DATA_DIR}/{SRC_DATA_NAME}"
         this_model_prefix = f"{SP_DIR}/{src_model_prefix}"
     else:
-        this_input_file = f"{DATA_DIR}/{TAR_DATA_NAME}"
-        this_model_prefix = f"{SP_DIR}/{tar_model_prefix}"
+        this_input_file = f"{DATA_DIR}/{TRG_DATA_NAME}"
+        this_model_prefix = f"{SP_DIR}/{trg_model_prefix}"
 
     config = template.format(this_input_file,
                             pad_id,
