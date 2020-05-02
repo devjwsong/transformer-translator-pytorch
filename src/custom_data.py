@@ -16,7 +16,7 @@ def get_data_loader():
     with open(f"{DATA_DIR}/{SRC_DATA_NAME}", 'r') as f:
         src_text_list = f.readlines()
 
-    with open(f"{DATA_DIR}/{trg_DATA_NAME}", 'r') as f:
+    with open(f"{DATA_DIR}/{TRG_DATA_NAME}", 'r') as f:
         trg_text_list = f.readlines()
 
     print("Tokenizing & Padding src data...")
