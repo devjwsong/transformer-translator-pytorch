@@ -15,11 +15,7 @@ import sentencepiece as spm
 summary = SummaryWriter(summary_path)
 
 class Manager():
-    def __init__(self):
-        # Load dataloaders
-        print("Loading dataloaders...")
-        self.train_loader = get_data_loader()
-
+    def __init__(self, is_train=True):
         # Load vocabs
         print("Loading vocabs...")
         self.src_i2w = {}
@@ -43,14 +39,19 @@ class Manager():
         print("Loading Transformer model...")
         self.model = Transformer(src_vocab_size=len(self.src_i2w), trg_vocab_size=len(self.trg_i2w)).to(device)
 
-        for p in self.model.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
+        if is_train:
+            for p in self.model.parameters():
+                if p.dim() > 1:
+                    nn.init.xavier_uniform_(p)
 
-        # Load optimizer and loss function
-        print("Loading optimizer and loss function...")
-        self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
-        self.criterion = nn.NLLLoss(ignore_index=pad_id)
+            # Load optimizer and loss function
+            print("Loading optimizer and loss function...")
+            self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+            self.criterion = nn.NLLLoss(ignore_index=pad_id)
+
+            # Load dataloaders
+            print("Loading dataloaders...")
+            self.train_loader = get_data_loader()
 
         print("Setting finished.")
 
@@ -116,7 +117,10 @@ class Manager():
             return
 
         print("Testing starts.")
-        self.model.load_state_dict(torch.load(f"{ckpt_dir}/model_name"))
+        if torch.cuda.is_available():
+            self.model.load_state_dict(torch.load(f"{ckpt_dir}/{model_name}"))
+        else:
+            self.model.load_state_dict(torch.load(f"{ckpt_dir}/{model_name}", map_location=torch.device('cpu')))
         self.model.eval()
 
         print("Loading sentencepiece tokenizer...")
@@ -127,7 +131,7 @@ class Manager():
 
         print("Preprocessing input sentence...")
         tokenized = src_sp.EncodeAsIds(input_sentence)
-        src_data = torch.LongTensor(tokenized).unsqueeze(0).to(device) # (1, L)
+        src_data = torch.LongTensor(add_padding(tokenized)).unsqueeze(0).to(device) # (1, L)
         encoder_mask = (src_data != pad_id).unsqueeze(1).to(device) # (1, 1, L)
 
         start_time = datetime.datetime.now()
@@ -137,13 +141,13 @@ class Manager():
         src_positional_encoded = self.model.positional_encoder(src_embedded)
         encoder_output = self.model.encoder(src_positional_encoded, encoder_mask) # (1, L, d_model)
 
-        outputs = torch.zeros(seq_len).long() # (L)
+        outputs = torch.zeros(seq_len).long().to(device) # (L)
         outputs[0] = sos_id # (L)
         output_len = 0
 
         for i in range(1, seq_len):
-            decoder_mask = (outputs.unsqueeze(0) != pad_id).unsqueeze(1) # (1, 1, L)
-            nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool)  # (1, L, L)
+            decoder_mask = (outputs.unsqueeze(0) != pad_id).unsqueeze(1).to(device) # (1, 1, L)
+            nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool).to(device)  # (1, L, L)
             nopeak_mask = torch.tril(nopeak_mask)  # (1, L, L) to triangular shape
             decoder_mask = decoder_mask & nopeak_mask  # (1, L, L) padding false
 
@@ -183,9 +187,8 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    manager = Manager()
-
     if args.mode == 'train':
+        manager = Manager(is_train=True)
         manager.train()
     elif args.mode == 'test':
         if args.model_name is None:
@@ -194,6 +197,7 @@ if __name__=='__main__':
             if args.input is None:
                 print("Please input a source sentence.")
             else:
+                manager = Manager(is_train=False)
                 manager.test(args.model_name, args.input)
     else:
         print("Please specify mode argument either with 'train' or 'test'.")
