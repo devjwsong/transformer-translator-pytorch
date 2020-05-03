@@ -12,8 +12,6 @@ import argparse
 import datetime
 import sentencepiece as spm
 
-summary = SummaryWriter(summary_path)
-
 class Manager():
     def __init__(self, is_train=True):
         # Load vocabs
@@ -52,6 +50,8 @@ class Manager():
             # Load dataloaders
             print("Loading dataloaders...")
             self.train_loader = get_data_loader()
+
+            self.summary = SummaryWriter(summary_path)
 
         print("Setting finished.")
 
@@ -92,7 +92,7 @@ class Manager():
             print(f"#################### Epoch: {epoch} ####################")
             print(f"Train loss: {mean_train_loss} || Training time: {minutes}mins {seconds}secs")
 
-            summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
+            self.summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
 
             if mean_train_loss < best_loss:
                 if not os.path.exists(ckpt_dir):
