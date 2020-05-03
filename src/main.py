@@ -156,6 +156,7 @@ class Manager():
             decoder_output = self.model.decoder(trg_positional_encoded, encoder_output, encoder_mask, decoder_mask) # (1, L, d_model)
 
             output = self.model.softmax(self.model.output_linear(decoder_output)) # (1, L, trg_vocab_size)
+
             output = torch.argmax(output, dim=-1) # (1, L)
             last_word_id = output[0][-1]
 

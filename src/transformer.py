@@ -37,21 +37,23 @@ class Encoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.ModuleList([EncoderLayer() for i in range(num_layers)])
+        self.layer_norm = LayerNormalization()
 
     def forward(self, x, encoder_mask):
         for i in range(num_layers):
             x = self.layers[i](x, encoder_mask)
 
-        return x
+        return self.layer_norm(x)
 
 
 class Decoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.ModuleList([DecoderLayer() for i in range(num_layers)])
+        self.layer_norm = LayerNormalization()
 
     def forward(self, x, encoder_output, encoder_mask, decoder_mask):
         for i in range(num_layers):
             x = self.layers[i](x, encoder_output, encoder_mask, decoder_mask)
 
-        return x
+        return self.layer_norm(x)
