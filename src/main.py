@@ -158,7 +158,7 @@ class Manager():
             output = self.model.softmax(self.model.output_linear(decoder_output)) # (1, L, trg_vocab_size)
 
             output = torch.argmax(output, dim=-1) # (1, L)
-            last_word_id = output[0][i].item()
+            last_word_id = output[0][i-1].item()
 
             if last_word_id == eos_id:
                 break
