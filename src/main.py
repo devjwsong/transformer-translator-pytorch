@@ -67,16 +67,16 @@ class Manager():
             start_time = datetime.datetime.now()
 
             for i, batch in tqdm(enumerate(self.train_loader)):
-                src_input, input_trg, output_trg, encoder_mask, decoder_mask = batch
-                src_input, input_trg, output_trg, encoder_mask, decoder_mask = \
-                    src_input.to(device), input_trg.to(device), output_trg.to(device),\
+                src_input, trg_input, trg_output, encoder_mask, decoder_mask = batch
+                src_input, trg_input, trg_output, encoder_mask, decoder_mask = \
+                    src_input.to(device), trg_input.to(device), trg_output.to(device),\
                     encoder_mask.to(device), decoder_mask.to(device)
 
-                output = self.model(src_input, input_trg, encoder_mask, decoder_mask) # (B, L, vocab_size)
+                output = self.model(src_input, trg_input, encoder_mask, decoder_mask) # (B, L, vocab_size)
 
-                output_trg_shape = output_trg.shape
+                trg_output_shape = trg_output.shape
                 self.optim.zero_grad()
-                loss = self.criterion(output.view(-1, sp_vocab_size), output_trg.view(output_trg_shape[0] * output_trg_shape[1]))
+                loss = self.criterion(output.view(-1, sp_vocab_size), trg_output.view(trg_output_shape[0] * trg_output_shape[1]))
 
                 loss.backward()
                 self.optim.step()
@@ -158,7 +158,7 @@ class Manager():
             output = self.model.softmax(self.model.output_linear(decoder_output)) # (1, L, trg_vocab_size)
 
             output = torch.argmax(output, dim=-1) # (1, L)
-            last_word_id = output[0][-1]
+            last_word_id = output[0][i].item()
 
             if last_word_id == eos_id:
                 break
@@ -166,7 +166,7 @@ class Manager():
             outputs[i] = last_word_id
             output_len = i
 
-        decoded_output = outputs[1:][:output_len].tolist()
+        decoded_output = outputs[1:output_len].tolist()
         decoded_output = trg_sp.decode_ids(decoded_output)
 
         end_time = datetime.datetime.now()
