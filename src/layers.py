@@ -97,8 +97,9 @@ class MultiheadAttention(nn.Module):
             attn_scores = attn_scores.masked_fill_(mask == 0, -1 * self.inf)
 
         # Softmax and multiplying K to calculate attention value
-        attn_scores = self.dropout(attn_scores)
-        attn_distribs = self.attn_softmax(attn_scores) # (B, num_heads, L, L)
+        attn_distribs = self.attn_softmax(attn_scores)
+
+        attn_distribs = self.dropout(attn_distribs)
         attn_values = torch.matmul(attn_distribs, v) # (B, num_heads, L, d_k)
 
         return attn_values
@@ -121,10 +122,10 @@ class FeedFowardLayer(nn.Module):
 
 
 class LayerNormalization(nn.Module):
-    def __init__(self, eps=1e-5):
+    def __init__(self, eps=1e-6):
         super().__init__()
         self.eps = eps
-        self.layer = nn.LayerNorm([seq_len, d_model], elementwise_affine=True, eps=self.eps)
+        self.layer = nn.LayerNorm([d_model], elementwise_affine=True, eps=self.eps)
 
     def forward(self, x):
         x = self.layer(x)
@@ -142,9 +143,9 @@ class PositionalEncoder(nn.Module):
         for pos in range(seq_len):
             for i in range(d_model):
                 if i % 2 == 0:
-                    pe_matrix[pos, i] = math.sin(pos / (10000 ** (2 * (i//2) / d_model)))
+                    pe_matrix[pos, i] = math.sin(pos / (10000 ** (2 * i / d_model)))
                 elif i % 2 == 1:
-                    pe_matrix[pos, i] = math.cos(pos / (10000 ** (2 * (i//2) / d_model)))
+                    pe_matrix[pos, i] = math.cos(pos / (10000 ** (2 * i / d_model)))
 
         pe_matrix = pe_matrix.unsqueeze(0) # (1, L, d_model)
         self.positional_encoding = pe_matrix.to(device=device).requires_grad_(False)
