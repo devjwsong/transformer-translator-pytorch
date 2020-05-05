@@ -67,16 +67,19 @@ class Manager():
             start_time = datetime.datetime.now()
 
             for i, batch in tqdm(enumerate(self.train_loader)):
-                src_input, trg_input, trg_output, encoder_mask, decoder_mask = batch
-                src_input, trg_input, trg_output, encoder_mask, decoder_mask = \
+                src_input, trg_input, trg_output, e_mask, d_mask = batch
+                src_input, trg_input, trg_output, e_mask, d_mask = \
                     src_input.to(device), trg_input.to(device), trg_output.to(device),\
-                    encoder_mask.to(device), decoder_mask.to(device)
+                    e_mask.to(device), d_mask.to(device)
 
-                output = self.model(src_input, trg_input, encoder_mask, decoder_mask) # (B, L, vocab_size)
+                output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
 
                 trg_output_shape = trg_output.shape
                 self.optim.zero_grad()
-                loss = self.criterion(output.view(-1, sp_vocab_size), trg_output.view(trg_output_shape[0] * trg_output_shape[1]))
+                loss = self.criterion(
+                    output.view(-1, sp_vocab_size),
+                    trg_output.view(trg_output_shape[0] * trg_output_shape[1])
+                )
 
                 loss.backward()
                 self.optim.step()
@@ -132,30 +135,37 @@ class Manager():
         print("Preprocessing input sentence...")
         tokenized = src_sp.EncodeAsIds(input_sentence)
         src_data = torch.LongTensor(add_padding(tokenized)).unsqueeze(0).to(device) # (1, L)
-        encoder_mask = (src_data != pad_id).unsqueeze(1).to(device) # (1, 1, L)
+        e_mask = (src_data != pad_id).unsqueeze(1).to(device) # (1, 1, L)
 
         start_time = datetime.datetime.now()
 
         print("Encoding input sentence...")
-        src_embedded = self.model.src_embedding(src_data)
-        src_positional_encoded = self.model.positional_encoder(src_embedded)
-        encoder_output = self.model.encoder(src_positional_encoded, encoder_mask) # (1, L, d_model)
+        src_data = self.model.src_embedding(src_data)
+        src_data = self.model.positional_encoder(src_data)
+        e_output = self.model.encoder(src_data, e_mask) # (1, L, d_model)
 
         outputs = torch.zeros(seq_len).long().to(device) # (L)
         outputs[0] = sos_id # (L)
         output_len = 0
 
         for i in range(1, seq_len):
-            decoder_mask = (outputs.unsqueeze(0) != pad_id).unsqueeze(1).to(device) # (1, 1, L)
+            d_mask = (outputs.unsqueeze(0) != pad_id).unsqueeze(1).to(device) # (1, 1, L)
             nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool).to(device)  # (1, L, L)
             nopeak_mask = torch.tril(nopeak_mask)  # (1, L, L) to triangular shape
-            decoder_mask = decoder_mask & nopeak_mask  # (1, L, L) padding false
+            d_mask = d_mask & nopeak_mask  # (1, L, L) padding false
 
             trg_embedded = self.model.trg_embedding(outputs.unsqueeze(0))
             trg_positional_encoded = self.model.positional_encoder(trg_embedded)
-            decoder_output = self.model.decoder(trg_positional_encoded, encoder_output, encoder_mask, decoder_mask) # (1, L, d_model)
+            decoder_output = self.model.decoder(
+                trg_positional_encoded,
+                e_output,
+                e_mask,
+                d_mask
+            ) # (1, L, d_model)
 
-            output = self.model.softmax(self.model.output_linear(decoder_output)) # (1, L, trg_vocab_size)
+            output = self.model.softmax(
+                self.model.output_linear(decoder_output)
+            ) # (1, L, trg_vocab_size)
 
             output = torch.argmax(output, dim=-1) # (1, L)
             last_word_id = output[0][i-1].item()

@@ -74,21 +74,21 @@ class CustomDataset(Dataset):
         assert np.shape(src_list) == np.shape(input_trg_list), "The shape of src_list and input_trg_list are different."
         assert np.shape(input_trg_list) == np.shape(output_trg_list), "The shape of input_trg_list and output_trg_list are different."
 
-        self.encoder_mask, self.decoder_mask = self.make_mask()
+        self.e_mask, self.d_mask = self.make_mask()
 
     def make_mask(self):
-        encoder_mask = (self.src_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
-        decoder_mask = (self.input_trg_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
+        e_mask = (self.src_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
+        d_mask = (self.input_trg_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
 
         nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool) # (1, L, L)
         nopeak_mask = torch.tril(nopeak_mask) # (1, L, L) to triangular shape
-        decoder_mask = decoder_mask & nopeak_mask # (num_samples, L, L) padding false
+        d_mask = d_mask & nopeak_mask # (num_samples, L, L) padding false
 
-        return encoder_mask, decoder_mask
+        return e_mask, d_mask
 
     def __getitem__(self, idx):
         return self.src_data[idx], self.input_trg_data[idx], self.output_trg_data[idx], \
-        self.encoder_mask[idx], self.decoder_mask[idx]
+        self.e_mask[idx], self.d_mask[idx]
 
     def __len__(self):
         return np.shape(self.src_data)[0]
