@@ -16,11 +16,13 @@ class EncoderLayer(nn.Module):
         self.feed_forward = FeedFowardLayer()
         self.drop_out_2 = nn.Dropout(drop_out_rate)
 
-    def forward(self, x, encoder_mask):
-        after_norm_1 = self.layer_norm_1(x) # (B, L, d_model)
-        x = x + self.drop_out_1(self.multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=encoder_mask)) # (B, L, d_model)
-        after_norm_2 = self.layer_norm_2(x) # (B, L, d_model)
-        x = x + self.drop_out_2(self.feed_forward(after_norm_2)) # (B, L, d_model)
+    def forward(self, x, e_mask):
+        x_1 = self.layer_norm_1(x) # (B, L, d_model)
+        x = x + self.drop_out_1(
+            self.multihead_attention(x_1, x_1, x_1, mask=e_mask)
+        ) # (B, L, d_model)
+        x_2 = self.layer_norm_2(x) # (B, L, d_model)
+        x = x + self.drop_out_2(self.feed_forward(x_2)) # (B, L, d_model)
 
         return x # (B, L, d_model)
 
@@ -40,13 +42,17 @@ class DecoderLayer(nn.Module):
         self.feed_forward = FeedFowardLayer()
         self.drop_out_3 = nn.Dropout(drop_out_rate)
 
-    def forward(self, x, encoder_output, encoder_mask,  decoder_mask):
-        after_norm_1 = self.layer_norm_1(x) # (B, L, d_model)
-        x = x + self.drop_out_1(self.masked_multihead_attention(after_norm_1, after_norm_1, after_norm_1, mask=decoder_mask)) # (B, L, d_model)
-        after_norm_2 = self.layer_norm_2(x) # (B, L, d_model)
-        x = x + self.drop_out_2(self.multihead_attention(after_norm_2, encoder_output, encoder_output, mask=encoder_mask)) # (B, L, d_model)
-        after_norm_3 = self.layer_norm_3(x) # (B, L, d_model)
-        x = x + self.drop_out_3(self.feed_forward(after_norm_3)) # (B, L, d_model)
+    def forward(self, x, e_output, e_mask,  d_mask):
+        x_1 = self.layer_norm_1(x) # (B, L, d_model)
+        x = x + self.drop_out_1(
+            self.masked_multihead_attention(x_1, x_1, x_1, mask=d_mask)
+        ) # (B, L, d_model)
+        x_2 = self.layer_norm_2(x) # (B, L, d_model)
+        x = x + self.drop_out_2(
+            self.multihead_attention(x_2, e_output, e_output, mask=e_mask)
+        ) # (B, L, d_model)
+        x_3 = self.layer_norm_3(x) # (B, L, d_model)
+        x = x + self.drop_out_3(self.feed_forward(x_3)) # (B, L, d_model)
 
         return x # (B, L, d_model)
 
@@ -82,7 +88,8 @@ class MultiheadAttention(nn.Module):
 
         # Conduct self-attention
         attn_values = self.self_attention(q, k, v, mask=mask) # (B, num_heads, L, d_k)
-        concat_output = attn_values.transpose(1, 2).contiguous().view(input_shape[0], -1, d_model) # (B, L, num_heads, d_k) = (B, L, d_model)
+        concat_output = attn_values.transpose(1, 2)\
+            .contiguous().view(input_shape[0], -1, d_model) # (B, L, d_model)
 
         return self.w_0(concat_output)
 
