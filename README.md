@@ -52,9 +52,9 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    You will get training logs and training loss as follows.
 
-   <img src="https://drive.google.com/uc?id=1opDUPfTj23dPeirAsmoeL71fLK4jzZlk" style="margin-left: 0;"/>
-
-   <img src="https://drive.google.com/uc?id=1PEhEkeecfHAjXx1H7J5JsFqvfbI1IWLB" style="width: 70%; margin-left: 0;">
+   ![3](https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png)
+   
+   ![4](https://user-images.githubusercontent.com/16731987/81287349-93134400-909d-11ea-9e76-de89e5601197.png)
 
    <br/>
 
@@ -68,7 +68,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    
    You will get the result as follows.
    
-   <img src="https://drive.google.com/uc?id=1D_dIuORGxmz1LQuuzMlFur8DMOQWuHU6" style="margin-left: 0;"/>
+   ![5](https://user-images.githubusercontent.com/16731987/81287373-9c9cac00-909d-11ea-86a1-7024374c2b3f.png)
    
    <br/>
 
