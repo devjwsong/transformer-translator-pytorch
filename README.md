@@ -52,7 +52,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    ![3](https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png)
    
-   ![4](https://user-images.githubusercontent.com/16731987/81287349-93134400-909d-11ea-9e76-de89e5601197.png)
+   ![4](https://user-images.githubusercontent.com/16731987/81287608-061cba80-909e-11ea-83ac-94f6ba8a98bc.png)
 
    <br/>
 
