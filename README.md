@@ -52,7 +52,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    <img src="https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png" alt="Transformer in Pytorch NMT task training log." style="margin-left: 0;"/>
    
-   <img src="https://user-images.githubusercontent.com/16731987/81287862-77f50400-909e-11ea-86ee-f2204e0740cc.png" alt="Transformer in Pytorch NMT task training loss plots." style="width: 70% !important; margin-left: 0;"/>
+   <img src="https://user-images.githubusercontent.com/16731987/81287862-77f50400-909e-11ea-86ee-f2204e0740cc.png" alt="Transformer in Pytorch NMT task training loss plots." width="70%;"/>
 
    <br/>
 
