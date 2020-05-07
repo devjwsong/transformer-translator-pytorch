@@ -19,6 +19,8 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    pip install -r requirements.txt
    ```
    
+   <br/>
+   
 2. Go to `src` directory and run `sp_process.py`.
 
    ```shell
@@ -38,18 +40,36 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
      - full_data.src
      - full_data.tar
 
+   <br/>
+
 3. Run below command to train a transformer model for machine translation.
 
    ```shell
    python main.py --mode='train'
    ```
 
+   <br/>
+
+   You will get training logs and training loss as follows.
+
+   <img src="https://drive.google.com/uc?id=1opDUPfTj23dPeirAsmoeL71fLK4jzZlk" style="margin-left: 0;"/>
+
+   <img src="https://drive.google.com/uc?id=1PEhEkeecfHAjXx1H7J5JsFqvfbI1IWLB" style="width: 70%; margin-left: 0;">
+
+   <br/>
+
 4. Run below command to test the trained model.
 
    ```shell
-   python main.py --mode='test' --model_name=MODEL_FILE_NAME
+   python main.py --mode='test' --model_name=MODEL_FILE_NAME --input=INPUT_TEXT
    ```
 
+   <br/>
+   
+   You will get the result as follows.
+   
+   <img src="https://drive.google.com/uc?id=1D_dIuORGxmz1LQuuzMlFur8DMOQWuHU6" style="margin-left: 0;"/>
+   
    <br/>
 
 ---
