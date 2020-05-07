@@ -48,8 +48,6 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    python main.py --mode='train'
    ```
 
-   <br/>
-
    You will get training logs and training loss as follows.
 
    ![3](https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png)
@@ -63,8 +61,6 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    ```shell
    python main.py --mode='test' --model_name=MODEL_FILE_NAME --input=INPUT_TEXT
    ```
-
-   <br/>
    
    You will get the result as follows.
    
