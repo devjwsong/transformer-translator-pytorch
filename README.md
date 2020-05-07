@@ -50,7 +50,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    You will get training logs and training loss as follows.
 
-   <img src="https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png" alt="Transformer in Pytorch NMT task training log." style="margin-left: 0;"/>
+   <img src="https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png" alt="Transformer in Pytorch NMT task training log."/>
    
    <img src="https://user-images.githubusercontent.com/16731987/81287862-77f50400-909e-11ea-86ee-f2204e0740cc.png" alt="Transformer in Pytorch NMT task training loss plots." width="70%;"/>
 
@@ -64,7 +64,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    
    You will get the result as follows.
    
-   <img src="https://user-images.githubusercontent.com/16731987/81287373-9c9cac00-909d-11ea-86a1-7024374c2b3f.png" alt="Transformer in Pytorch NMT task testing result." style="margin-left: 0;"/>
+   <img src="https://user-images.githubusercontent.com/16731987/81287373-9c9cac00-909d-11ea-86a1-7024374c2b3f.png" alt="Transformer in Pytorch NMT task testing result."/>
    
    <br/>
 
