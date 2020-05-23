@@ -13,7 +13,7 @@ import datetime
 import sentencepiece as spm
 
 class Manager():
-    def __init__(self, is_train=True):
+    def __init__(self, is_train=True, model_name=None):
         # Load vocabs
         print("Loading vocabs...")
         self.src_i2w = {}
@@ -38,9 +38,12 @@ class Manager():
         self.model = Transformer(src_vocab_size=len(self.src_i2w), trg_vocab_size=len(self.trg_i2w)).to(device)
 
         if is_train:
-            for p in self.model.parameters():
-                if p.dim() > 1:
-                    nn.init.xavier_uniform_(p)
+            if model_name is not None:
+                self.model.load_state_dict(torch.load(f"{ckpt_dir}/{model_name}"))
+            else:
+                for p in self.model.parameters():
+                    if p.dim() > 1:
+                        nn.init.xavier_uniform_(p)
 
             # Load optimizer and loss function
             print("Loading optimizer and loss function...")
@@ -199,7 +202,11 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if args.mode == 'train':
-        manager = Manager(is_train=True)
+        if args.model_name is not None:
+            manager = Manager(is_train=True, model_name=args.model_name)
+        else:
+            manager = Manager(is_train=True)
+
         manager.train()
     elif args.mode == 'test':
         if args.model_name is None:

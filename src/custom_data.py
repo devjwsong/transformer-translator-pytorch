@@ -47,7 +47,7 @@ def process_src(text_list):
     tokenized_list = []
     for text in tqdm(text_list):
         tokenized = src_sp.EncodeAsIds(text.strip())
-        tokenized_list.append(add_padding(tokenized))
+        tokenized_list.append(add_padding(tokenized + [eos_id]))
 
     return tokenized_list
 
