@@ -3,7 +3,6 @@ from constants import *
 from custom_data import *
 from transformer import *
 from torch import nn
-from tensorboardX import SummaryWriter
 
 import torch
 import sys, os
@@ -13,7 +12,7 @@ import datetime
 import sentencepiece as spm
 
 class Manager():
-    def __init__(self, is_train=True, model_name=None):
+    def __init__(self, is_train=True, ckpt_name=None):
         # Load vocabs
         print("Loading vocabs...")
         self.src_i2w = {}
@@ -33,28 +32,32 @@ class Manager():
 
         print(f"The size of src vocab is {len(self.src_i2w)} and that of trg vocab is {len(self.trg_i2w)}.")
 
-        # Load transformer model
-        print("Loading Transformer model...")
+        # Load Transformer model & Adam optimizer
+        print("Loading Transformer model & Adam optimizer...")
         self.model = Transformer(src_vocab_size=len(self.src_i2w), trg_vocab_size=len(self.trg_i2w)).to(device)
+        self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.best_loss = sys.float_info.max
+
+        if ckpt_name is not None:
+            assert os.path.exists(f"{ckpt_dir}/{ckpt_name}"), f"There is no checkpoint named {ckpt_name}."
+
+            checkpoint = torch.load(f"{ckpt_dir}/{ckpt_name}")
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.optim.load_state_dict(checkpoint['optim_state_dict'])
+            self.best_loss = checkpoint['loss']
+        else:
+            for p in self.model.parameters():
+                if p.dim() > 1:
+                    nn.init.xavier_uniform_(p)
 
         if is_train:
-            if model_name is not None:
-                self.model.load_state_dict(torch.load(f"{ckpt_dir}/{model_name}"))
-            else:
-                for p in self.model.parameters():
-                    if p.dim() > 1:
-                        nn.init.xavier_uniform_(p)
-
-            # Load optimizer and loss function
-            print("Loading optimizer and loss function...")
-            self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+            # Load loss function
+            print("Loading loss function...")
             self.criterion = nn.NLLLoss(ignore_index=pad_id)
 
             # Load dataloaders
             print("Loading dataloaders...")
             self.train_loader = get_data_loader()
-
-            self.summary = SummaryWriter(summary_path)
 
         print("Setting finished.")
 
@@ -62,7 +65,6 @@ class Manager():
         print("Training starts.")
         self.model.train()
 
-        best_loss = sys.float_info.max
         total_training_time = datetime.timedelta()
         for epoch in range(1, num_epochs+1):
 
@@ -98,14 +100,17 @@ class Manager():
             print(f"#################### Epoch: {epoch} ####################")
             print(f"Train loss: {mean_train_loss} || Training time: {minutes}mins {seconds}secs")
 
-            self.summary.add_scalar('loss/train_loss', mean_train_loss, epoch)
-
-            if mean_train_loss < best_loss:
+            if mean_train_loss < self.best_loss:
                 if not os.path.exists(ckpt_dir):
                     os.mkdir(ckpt_dir)
-                torch.save(self.model.state_dict(), f"{ckpt_dir}/best_model.pth")
-                print(f"Current best model is saved.")
-                best_loss = mean_train_loss
+                state_dict = {
+                    'model_state_dict': self.model.state_dict(),
+                    'optim_state_dict': self.optim.state_dict(),
+                    'loss': mean_train_loss
+                }
+                torch.save(state_dict, f"{ckpt_dir}/best_ckpt.tar")
+                print(f"Current best checkpoint is saved.")
+                self.best_loss = mean_train_loss
 
             total_training_time += training_time
 
@@ -117,16 +122,8 @@ class Manager():
         print(f"Training finished! || Total training time: {hours}hrs {minutes}mins {seconds}secs")
 
 
-    def test(self, model_name, input_sentence):
-        if not os.path.exists(f"{ckpt_dir}/{model_name}"):
-            print(f"There is no model named {model_name}. Test aborted.")
-            return
-
+    def test(self, input_sentence):
         print("Testing starts.")
-        if torch.cuda.is_available():
-            self.model.load_state_dict(torch.load(f"{ckpt_dir}/{model_name}"))
-        else:
-            self.model.load_state_dict(torch.load(f"{ckpt_dir}/{model_name}", map_location=torch.device('cpu')))
         self.model.eval()
 
         print("Loading sentencepiece tokenizer...")
@@ -196,26 +193,26 @@ class Manager():
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', required=True, help="train or test?")
-    parser.add_argument('--model_name', required=False, help="trained model file to test")
+    parser.add_argument('--ckpt_name', required=False, help="best checkpoint file")
     parser.add_argument('--input', type=str, required=False, help="input sentence when testing")
 
     args = parser.parse_args()
 
     if args.mode == 'train':
-        if args.model_name is not None:
-            manager = Manager(is_train=True, model_name=args.model_name)
+        if args.ckpt_name is not None:
+            manager = Manager(is_train=True, ckpt_name=args.ckpt_name)
         else:
             manager = Manager(is_train=True)
 
         manager.train()
     elif args.mode == 'test':
-        if args.model_name is None:
-            print("Please specify the model file.")
+        if args.ckpt_name is None:
+            print("Please specify the checkpoint.")
         else:
             if args.input is None:
                 print("Please input a source sentence.")
             else:
-                manager = Manager(is_train=False)
-                manager.test(args.model_name, args.input)
+                manager = Manager(is_train=False, ckpt_name=args.ckpt_name)
+                manager.test(args.input)
     else:
         print("Please specify mode argument either with 'train' or 'test'.")
