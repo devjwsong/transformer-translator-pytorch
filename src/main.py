@@ -186,6 +186,7 @@ class Manager():
         minutes = seconds // 60
         seconds = seconds % 60
 
+        print(f"Input: {input_sentence}")
         print(f"Result: {decoded_output}")
         print(f"Testing finished! || Total testing time: {minutes}mins {seconds}secs")
 
