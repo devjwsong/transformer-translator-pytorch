@@ -53,7 +53,7 @@ class Manager():
         if is_train:
             # Load loss function
             print("Loading loss function...")
-            self.criterion = nn.NLLLoss(ignore_index=pad_id)
+            self.criterion = nn.NLLLoss()
 
             # Load dataloaders
             print("Loading dataloaders...")
@@ -72,10 +72,10 @@ class Manager():
             start_time = datetime.datetime.now()
 
             for i, batch in tqdm(enumerate(self.train_loader)):
-                src_input, trg_input, trg_output, e_mask, d_mask = batch
-                src_input, trg_input, trg_output, e_mask, d_mask = \
-                    src_input.to(device), trg_input.to(device), trg_output.to(device),\
-                    e_mask.to(device), d_mask.to(device)
+                src_input, trg_input, trg_output = batch
+                src_input, trg_input, trg_output = src_input.to(device), trg_input.to(device), trg_output.to(device)
+
+                e_mask, d_mask = self.make_mask(src_input, trg_input)
 
                 output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
 
@@ -189,6 +189,16 @@ class Manager():
         print(f"Input: {input_sentence}")
         print(f"Result: {decoded_output}")
         print(f"Testing finished! || Total testing time: {minutes}mins {seconds}secs")
+
+    def make_mask(self, src_input, trg_input):
+        e_mask = (src_input != pad_id).unsqueeze(1)  # (B, 1, L)
+        d_mask = (trg_input != pad_id).unsqueeze(1)  # (B, 1, L)
+
+        nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool)  # (1, L, L)
+        nopeak_mask = torch.tril(nopeak_mask).to(device)  # (1, L, L) to triangular shape
+        d_mask = d_mask & nopeak_mask  # (B, L, L) padding false
+
+        return e_mask, d_mask
 
 
 if __name__=='__main__':

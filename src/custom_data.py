@@ -74,8 +74,6 @@ class CustomDataset(Dataset):
         assert np.shape(src_list) == np.shape(input_trg_list), "The shape of src_list and input_trg_list are different."
         assert np.shape(input_trg_list) == np.shape(output_trg_list), "The shape of input_trg_list and output_trg_list are different."
 
-        self.e_mask, self.d_mask = self.make_mask()
-
     def make_mask(self):
         e_mask = (self.src_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
         d_mask = (self.input_trg_data != pad_id).unsqueeze(1) # (num_samples, 1, L)
@@ -87,8 +85,7 @@ class CustomDataset(Dataset):
         return e_mask, d_mask
 
     def __getitem__(self, idx):
-        return self.src_data[idx], self.input_trg_data[idx], self.output_trg_data[idx], \
-        self.e_mask[idx], self.d_mask[idx]
+        return self.src_data[idx], self.input_trg_data[idx], self.output_trg_data[idx]
 
     def __len__(self):
         return np.shape(self.src_data)[0]
