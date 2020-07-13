@@ -48,6 +48,6 @@ class PriorityQueue():
         print(scores)
         
     def print_objs(self):
-        scores = [t[1] for t in self.queue]
-        print(scores)
+        objs = [t[1] for t in self.queue]
+        print(objs)
     
