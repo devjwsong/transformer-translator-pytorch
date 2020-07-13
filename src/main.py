@@ -294,6 +294,7 @@ if __name__=='__main__':
     elif args.mode == 'test':
         assert args.ckpt_name is not None, "Please specify the model file name you want to test."
         assert args.input is not None, "Please type the input translated."
+        assert args.decode == 'greedy' or args.decode =='beam', "Please specify correct decoding method, either 'greedy' or 'beam'."
         
         manager = Manager(is_train=False, ckpt_name=args.ckpt_name)
         manager.test(args.input, args.decode)

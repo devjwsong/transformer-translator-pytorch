@@ -45,13 +45,16 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 3. Run below command to train a transformer model for machine translation.
 
    ```shell
-   python main.py --mode='train'
+   python main.py --mode='train' --ckpt_name=CHECKPOINT_NAME
    ```
+
+   - `--mode`: You have to specify the mode among two options, 'train' or 'test'.
+   - `--ckpt_name`: This specify the checkpoint file name. This would be the name of trained checkpoint and you can continue your training with this model in the case of resuming training. If you want to conduct training first, this parameter should be omitted. When testing, this would be the name of the checkpoint you want to test.
 
    You will get training logs and training loss as follows.
 
    <img src="https://user-images.githubusercontent.com/16731987/81287281-770fa280-909d-11ea-8aa2-6e4c00d36187.png" alt="Transformer in Pytorch NMT task training log."/>
-   
+
    <img src="https://user-images.githubusercontent.com/16731987/81287862-77f50400-909e-11ea-86ee-f2204e0740cc.png" alt="Transformer in Pytorch NMT task training loss plots." width="70%;"/>
 
    <br/>
@@ -59,8 +62,11 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 4. Run below command to test the trained model.
 
    ```shell
-   python main.py --mode='test' --model_name=MODEL_FILE_NAME --input=INPUT_TEXT
+   python main.py --mode='test' --ckpt_name=CHECKPOINT_NAME --input=INPUT_TEXT --decode=DECODING_STRATEGY
    ```
+   
+   - `--input`: This is an input sequence you want to translate.
+   - `--decode`: This makes the decoding algorithm into either greedy method or beam search. Make this parameter 'greedy' or 'beam'. 
    
    You will get the result as follows.
    
