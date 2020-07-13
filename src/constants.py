@@ -1,8 +1,8 @@
 import torch
 
 # Path or parameters for data
-DATA_DIR = '../data'
-SP_DIR = '../data/sp'
+DATA_DIR = 'data'
+SP_DIR = 'data/sp'
 SRC_DATA_NAME = 'full_data.en'
 TRG_DATA_NAME = 'full_data.fr'
 
@@ -20,8 +20,8 @@ model_type = 'bpe'
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 learning_rate = 0.0001
-batch_size = 16
-seq_len = 320
+batch_size = 32
+seq_len = 200
 num_heads = 8
 num_layers = 6
 d_model = 512
@@ -29,7 +29,5 @@ d_ff = 2048
 d_k = d_model // num_heads
 drop_out_rate = 0.1
 num_epochs = 50
-ckpt_dir = '../saved_model'
-
-# Path for tensorboard
-summary_path = '../runs'
+beam_size = 8
+ckpt_dir = 'saved_model'

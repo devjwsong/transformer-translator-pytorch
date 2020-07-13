@@ -34,11 +34,13 @@ def get_data_loader():
     return dataloader
 
 
-def add_padding(tokenized_text):
+def pad_or_truncate(tokenized_text):
     if len(tokenized_text) < seq_len:
         left = seq_len - len(tokenized_text)
         padding = [pad_id] * left
         tokenized_text += padding
+    else:
+        tokenized_text = tokenized_text[:seq_len]
 
     return tokenized_text
 
@@ -47,7 +49,7 @@ def process_src(text_list):
     tokenized_list = []
     for text in tqdm(text_list):
         tokenized = src_sp.EncodeAsIds(text.strip())
-        tokenized_list.append(add_padding(tokenized + [eos_id]))
+        tokenized_list.append(pad_or_truncate(tokenized + [eos_id]))
 
     return tokenized_list
 
@@ -58,8 +60,8 @@ def process_trg(text_list):
         tokenized = trg_sp.EncodeAsIds(text.strip())
         trg_input = [sos_id] + tokenized
         trg_output = tokenized + [eos_id]
-        input_tokenized_list.append(add_padding(trg_input))
-        output_tokenized_list.append(add_padding(trg_output))
+        input_tokenized_list.append(pad_or_truncate(trg_input))
+        output_tokenized_list.append(pad_or_truncate(trg_output))
 
     return input_tokenized_list, output_tokenized_list
 

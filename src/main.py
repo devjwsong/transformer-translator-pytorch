@@ -2,6 +2,7 @@ from tqdm import tqdm
 from constants import *
 from custom_data import *
 from transformer import *
+from data_structure import *
 from torch import nn
 
 import torch
@@ -9,6 +10,8 @@ import sys, os
 import numpy as np
 import argparse
 import datetime
+import copy
+import heapq
 import sentencepiece as spm
 
 class Manager():
@@ -65,7 +68,6 @@ class Manager():
         print("Training starts.")
         self.model.train()
 
-        total_training_time = datetime.timedelta()
         for epoch in range(1, num_epochs+1):
 
             train_losses = []
@@ -78,6 +80,11 @@ class Manager():
                 e_mask, d_mask = self.make_mask(src_input, trg_input)
 
                 output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
+                
+                src_input.cpu()
+                trg_input.cpu()
+                e_mask.cpu()
+                d_mask.cpu()
 
                 trg_output_shape = trg_output.shape
                 self.optim.zero_grad()
@@ -90,6 +97,9 @@ class Manager():
                 self.optim.step()
 
                 train_losses.append(loss.item())
+                
+                output.cpu()
+                trg_output.cpu()
 
             end_time = datetime.datetime.now()
             training_time = end_time - start_time
@@ -109,20 +119,12 @@ class Manager():
                     'loss': mean_train_loss
                 }
                 torch.save(state_dict, f"{ckpt_dir}/best_ckpt.tar")
-                print(f"Current best checkpoint is saved.")
+                print(f"***** Current best checkpoint is saved. *****")
                 self.best_loss = mean_train_loss
 
-            total_training_time += training_time
+        print(f"Training finished!")
 
-        seconds = total_training_time.seconds
-        hours = seconds // 3600
-        seconds = seconds % 3600
-        minutes = seconds // 60
-        seconds = seconds % 60
-        print(f"Training finished! || Total training time: {hours}hrs {minutes}mins {seconds}secs")
-
-
-    def test(self, input_sentence):
+    def test(self, input_sentence, method):
         print("Testing starts.")
         self.model.eval()
 
@@ -134,7 +136,7 @@ class Manager():
 
         print("Preprocessing input sentence...")
         tokenized = src_sp.EncodeAsIds(input_sentence)
-        src_data = torch.LongTensor(add_padding(tokenized)).unsqueeze(0).to(device) # (1, L)
+        src_data = torch.LongTensor(pad_or_truncate(tokenized)).unsqueeze(0).to(device) # (1, L)
         e_mask = (src_data != pad_id).unsqueeze(1).to(device) # (1, 1, L)
 
         start_time = datetime.datetime.now()
@@ -144,17 +146,34 @@ class Manager():
         src_data = self.model.positional_encoder(src_data)
         e_output = self.model.encoder(src_data, e_mask) # (1, L, d_model)
 
-        outputs = torch.zeros(seq_len).long().to(device) # (L)
-        outputs[0] = sos_id # (L)
-        output_len = 0
+        if method == 'greedy':
+            result = self.greedy_search(e_output, e_mask, trg_sp)
+        elif method == 'beam':
+            result = self.beam_search(e_output, e_mask, trg_sp)
 
-        for i in range(1, seq_len):
-            d_mask = (outputs.unsqueeze(0) != pad_id).unsqueeze(1).to(device) # (1, 1, L)
+        end_time = datetime.datetime.now()
+
+        total_testing_time = end_time - start_time
+        seconds = total_testing_time.seconds
+        minutes = seconds // 60
+        seconds = seconds % 60
+
+        print(f"Input: {input_sentence}")
+        print(f"Result: {result}")
+        print(f"Testing finished! || Total testing time: {minutes}mins {seconds}secs")
+        
+    def greedy_search(self, e_output, e_mask, trg_sp):
+        last_words = torch.LongTensor([pad_id] * seq_len).to(device) # (L)
+        last_words[0] = sos_id # (L)
+        cur_len = 1
+
+        for i in range(seq_len):
+            d_mask = (last_words.unsqueeze(0) != pad_id).unsqueeze(1).to(device) # (1, 1, L)
             nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool).to(device)  # (1, L, L)
             nopeak_mask = torch.tril(nopeak_mask)  # (1, L, L) to triangular shape
             d_mask = d_mask & nopeak_mask  # (1, L, L) padding false
 
-            trg_embedded = self.model.trg_embedding(outputs.unsqueeze(0))
+            trg_embedded = self.model.trg_embedding(last_words.unsqueeze(0))
             trg_positional_encoded = self.model.positional_encoder(trg_embedded)
             decoder_output = self.model.decoder(
                 trg_positional_encoded,
@@ -168,27 +187,82 @@ class Manager():
             ) # (1, L, trg_vocab_size)
 
             output = torch.argmax(output, dim=-1) # (1, L)
-            last_word_id = output[0][i-1].item()
-
+            last_word_id = output[0][i].item()
+            
+            if i < seq_len-1:
+                last_words[i+1] = last_word_id
+                cur_len += 1
+            
             if last_word_id == eos_id:
                 break
 
-            outputs[i] = last_word_id
-            output_len = i
-
-        decoded_output = outputs[1:output_len].tolist()
+        if last_words[-1].item() == pad_id:
+            decoded_output = last_words[1:cur_len].tolist()
+        else:
+            decoded_output = last_words[1:].tolist()
         decoded_output = trg_sp.decode_ids(decoded_output)
+        
+        return decoded_output
+    
+    def beam_search(self, e_output, e_mask, trg_sp):
+        cur_queue = PriorityQueue()
+        for k in range(beam_size):
+            cur_queue.put(BeamNode(sos_id, -0.0, [sos_id]))
+        
+        finished_count = 0
+        
+        for pos in range(seq_len):
+            new_queue = PriorityQueue()
+            for k in range(beam_size):
+                node = cur_queue.get()
+                if node.is_finished:
+                    new_queue.put(node)
+                else:
+                    trg_input = torch.LongTensor(node.decoded + [pad_id] * (seq_len - len(node.decoded))).to(device) # (L)
+                    d_mask = (trg_input.unsqueeze(0) != pad_id).unsqueeze(1).to(device) # (1, 1, L)
+                    nopeak_mask = torch.ones([1, seq_len, seq_len], dtype=torch.bool).to(device)
+                    nopeak_mask = torch.tril(nopeak_mask) # (1, L, L) to triangular shape
+                    d_mask = d_mask & nopeak_mask # (1, L, L) padding false
+                    
+                    trg_embedded = self.model.trg_embedding(trg_input.unsqueeze(0))
+                    trg_positional_encoded = self.model.positional_encoder(trg_embedded)
+                    decoder_output = self.model.decoder(
+                        trg_positional_encoded,
+                        e_output,
+                        e_mask,
+                        d_mask
+                    ) # (1, L, d_model)
 
-        end_time = datetime.datetime.now()
-
-        total_testing_time = end_time - start_time
-        seconds = total_testing_time.seconds
-        minutes = seconds // 60
-        seconds = seconds % 60
-
-        print(f"Input: {input_sentence}")
-        print(f"Result: {decoded_output}")
-        print(f"Testing finished! || Total testing time: {minutes}mins {seconds}secs")
+                    output = self.model.softmax(
+                        self.model.output_linear(decoder_output)
+                    ) # (1, L, trg_vocab_size)
+                    
+                    output = torch.topk(output[0][pos], dim=-1, k=beam_size)
+                    last_word_ids = output.indices.tolist() # (k)
+                    last_word_prob = output.values.tolist() # (k)
+                    
+                    for i, idx in enumerate(last_word_ids):
+                        new_node = BeamNode(idx, -(-node.prob + last_word_prob[i]), node.decoded + [idx])
+                        if idx == eos_id:
+                            new_node.prob = new_node.prob / float(len(new_node.decoded))
+                            new_node.is_finished = True
+                            finished_count += 1
+                        new_queue.put(new_node)
+            
+            cur_queue = copy.deepcopy(new_queue)
+            
+            if finished_count == beam_size:
+                break
+        
+        decoded_output = cur_queue.get().decoded
+        
+        if decoded_output[-1] == eos_id:
+            decoded_output = decoded_output[1:-1]
+        else:
+            decoded_output = decoded_output[1:]
+            
+        return trg_sp.decode_ids(decoded_output)
+        
 
     def make_mask(self, src_input, trg_input):
         e_mask = (src_input != pad_id).unsqueeze(1)  # (B, 1, L)
@@ -206,6 +280,7 @@ if __name__=='__main__':
     parser.add_argument('--mode', required=True, help="train or test?")
     parser.add_argument('--ckpt_name', required=False, help="best checkpoint file")
     parser.add_argument('--input', type=str, required=False, help="input sentence when testing")
+    parser.add_argument('--decode', type=str, required=False, default="greedy", help="greedy or beam?")
 
     args = parser.parse_args()
 
@@ -217,13 +292,11 @@ if __name__=='__main__':
 
         manager.train()
     elif args.mode == 'test':
-        if args.ckpt_name is None:
-            print("Please specify the checkpoint.")
-        else:
-            if args.input is None:
-                print("Please input a source sentence.")
-            else:
-                manager = Manager(is_train=False, ckpt_name=args.ckpt_name)
-                manager.test(args.input)
+        assert args.ckpt_name is not None, "Please specify the model file name you want to test."
+        assert args.input is not None, "Please type the input translated."
+        
+        manager = Manager(is_train=False, ckpt_name=args.ckpt_name)
+        manager.test(args.input, args.decode)
+
     else:
         print("Please specify mode argument either with 'train' or 'test'.")
