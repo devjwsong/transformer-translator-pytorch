@@ -149,8 +149,10 @@ class Manager():
         e_output = self.model.encoder(src_data, e_mask) # (1, L, d_model)
 
         if method == 'greedy':
+            print("Greedy decoding selected.")
             result = self.greedy_search(e_output, e_mask, trg_sp)
         elif method == 'beam':
+            print("Beam search selected.")
             result = self.beam_search(e_output, e_mask, trg_sp)
 
         end_time = datetime.datetime.now()
