@@ -44,11 +44,13 @@ class Manager():
         if ckpt_name is not None:
             assert os.path.exists(f"{ckpt_dir}/{ckpt_name}"), f"There is no checkpoint named {ckpt_name}."
 
+            print("Loading checkpoint...")
             checkpoint = torch.load(f"{ckpt_dir}/{ckpt_name}")
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.optim.load_state_dict(checkpoint['optim_state_dict'])
             self.best_loss = checkpoint['loss']
         else:
+            print("Initializing the model...")
             for p in self.model.parameters():
                 if p.dim() > 1:
                     nn.init.xavier_uniform_(p)
