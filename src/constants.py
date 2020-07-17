@@ -15,7 +15,7 @@ src_model_prefix = 'src_sp'
 trg_model_prefix = 'trg_sp'
 sp_vocab_size = 16000
 character_coverage = 1.0
-model_type = 'bpe'
+model_type = 'unigram'
 
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
