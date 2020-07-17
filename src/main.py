@@ -62,7 +62,8 @@ class Manager():
 
             # Load dataloaders
             print("Loading dataloaders...")
-            self.train_loader = get_data_loader()
+            self.train_loader = get_data_loader(TRAIN_NAME)
+            self.valid_loader = get_data_loader(VALID_NAME)
 
         print("Setting finished.")
 
@@ -126,7 +127,7 @@ class Manager():
 
         print(f"Training finished!")
 
-    def test(self, input_sentence, method):
+    def test(self, method, input_sentence):
         print("Testing starts.")
         self.model.eval()
 
@@ -297,7 +298,7 @@ if __name__=='__main__':
         manager.train()
     elif args.mode == 'test':
         assert args.ckpt_name is not None, "Please specify the model file name you want to test."
-        assert args.input is not None, "Please type the input translated."
+        assert args.input is not None, "Please specify the input sentence to translate."
         assert args.decode == 'greedy' or args.decode =='beam', "Please specify correct decoding method, either 'greedy' or 'beam'."
         
         manager = Manager(is_train=False, ckpt_name=args.ckpt_name)

@@ -3,8 +3,13 @@ import torch
 # Path or parameters for data
 DATA_DIR = 'data'
 SP_DIR = 'data/sp'
-SRC_DATA_NAME = 'full_data.en'
-TRG_DATA_NAME = 'full_data.fr'
+SRC_DIR = 'en'
+TRG_DIR = 'fr'
+SRC_RAW_DATA_NAME = 'raw_data.en'
+TRG_RAW_DATA_NAME = 'raw_data.fr'
+TRAIN_NAME = 'train.txt'
+VALID_NAME = 'valid.txt'
+TEST_NAME = 'test.txt'
 
 # Parameters for sentencepiece tokenizer
 pad_id = 0

@@ -3,3 +3,4 @@ tqdm==4.45.0
 sentencepiece==0.1.85
 numpy==1.18.2
 scikit-learn==0.22.2
+torchtext==0.6.0

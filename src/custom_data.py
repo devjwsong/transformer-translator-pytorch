@@ -12,11 +12,12 @@ src_sp.Load(f"{SP_DIR}/{src_model_prefix}.model")
 trg_sp.Load(f"{SP_DIR}/{trg_model_prefix}.model")
 
 
-def get_data_loader():
-    with open(f"{DATA_DIR}/{SRC_DATA_NAME}", 'r') as f:
+def get_data_loader(file_name):
+    print(f"Getting source/target {file_name}...")
+    with open(f"{DATA_DIR}/{SRC_DIR}/{file_name}", 'r') as f:
         src_text_list = f.readlines()
 
-    with open(f"{DATA_DIR}/{TRG_DATA_NAME}", 'r') as f:
+    with open(f"{DATA_DIR}/{TRG_DIR}/{file_name}", 'r') as f:
         trg_text_list = f.readlines()
 
     print("Tokenizing & Padding src data...")
