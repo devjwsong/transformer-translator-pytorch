@@ -131,11 +131,8 @@ dmypy.json
 # pycharm
 .idea
 
-# sentencepiece model & vocab
-data/sp/
-
-# data file processing file
-src/raw_data_process.py
+# raw data & sentencepiece model & vocab
+data/
 
 # ckpt model
 saved_model/
