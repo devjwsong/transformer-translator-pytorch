@@ -13,7 +13,9 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
 1. Download the dataset from ["European Parliament Proceedings Parallel Corpus 1996-2011"](https://www.statmt.org/europarl/). 
 	
-   You can choose any parallel corpus you want. Download it and extract it until you have two raw text files, `europarl-v7.SRC-TRG.SRC` and `europarl-v7.SRC-TRG.TRG`.
+   You can choose any parallel corpus you want. (I chose English-French for example.)
+   
+   Download it and extract it until you have two raw text files, `europarl-v7.SRC-TRG.SRC` and `europarl-v7.SRC-TRG.TRG`.
    
    Make `data` directory in the root directory and put raw texts in it.
    
@@ -37,14 +39,14 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    Each model and vocab files are for source language and target language.
 
-   - data
-     - sp
-       - src_sp.model
-       - src_sp.vocab
-       - tar_sp.model
-       - tar_sp.vocab
-     - full_data.src
-     - full_data.tar
+   - `data`
+     - `sp`
+       - `src_sp.model`
+       - `src_sp.vocab`
+       - `tar_sp.model`
+       - `tar_sp.vocab`
+     - `full_data.src`
+     - `full_data.tar`
 
    <br/>
 
