@@ -21,6 +21,8 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    
    Name each `full_data.src` and `full_data.trg`.
    
+   <br/>
+   
 2. Install all required packages.
 
    ```shell
