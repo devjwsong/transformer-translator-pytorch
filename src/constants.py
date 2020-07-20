@@ -33,6 +33,6 @@ d_model = 512
 d_ff = 2048
 d_k = d_model // num_heads
 drop_out_rate = 0.1
-num_epochs = 50
+num_epochs = 10
 beam_size = 8
 ckpt_dir = 'saved_model'

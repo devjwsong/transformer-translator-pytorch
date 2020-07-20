@@ -69,6 +69,6 @@ def split_data(raw_data_name, data_dir):
 if __name__=='__main__':
     train_sp(is_src=True)
     train_sp(is_src=False)
-    split_data(SRC_DATA_NAME, SRC_DIR)
-    split_data(TRG_DATA_NAME, TRG_DIR)
+    split_data(SRC_RAW_DATA_NAME, SRC_DIR)
+    split_data(TRG_RAW_DATA_NAME, TRG_DIR)
     

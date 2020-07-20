@@ -69,10 +69,10 @@ class Manager():
 
     def train(self):
         print("Training starts.")
-        self.model.train()
 
         for epoch in range(1, num_epochs+1):
-
+            self.model.train()
+            
             train_losses = []
             start_time = datetime.datetime.now()
 
@@ -106,14 +106,18 @@ class Manager():
 
             end_time = datetime.datetime.now()
             training_time = end_time - start_time
-            minutes = training_time.seconds // 60
-            seconds = training_time.seconds % 60
+            seconds = training_time.seconds
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            seconds = seconds % 60
 
             mean_train_loss = np.mean(train_losses)
             print(f"#################### Epoch: {epoch} ####################")
-            print(f"Train loss: {mean_train_loss} || Training time: {minutes}mins {seconds}secs")
+            print(f"Train loss: {mean_train_loss} || One epoch training time: {hours}hrs {minutes}mins {seconds}secs")
 
-            if mean_train_loss < self.best_loss:
+            valid_loss, valid_time = self.validation()
+            
+            if valid_loss < self.best_loss:
                 if not os.path.exists(ckpt_dir):
                     os.mkdir(ckpt_dir)
                 state_dict = {
@@ -123,9 +127,51 @@ class Manager():
                 }
                 torch.save(state_dict, f"{ckpt_dir}/best_ckpt.tar")
                 print(f"***** Current best checkpoint is saved. *****")
-                self.best_loss = mean_train_loss
+                self.best_loss = valid_loss
 
         print(f"Training finished!")
+        
+    def validation(self):
+        print("Validation processing...")
+        self.model.eval()
+        
+        valid_losses = []
+        start_time = datetime.datetime.now()
+        
+        for i, batch in tqdm(enumerate(self.valid_loader)):
+            src_input, trg_input, trg_output = batch
+            src_input, trg_input, trg_output = src_input.to(device), trg_input.to(device), trg_output.to(device)
+
+            e_mask, d_mask = self.make_mask(src_input, trg_input)
+
+            output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
+                
+            src_input.cpu()
+            trg_input.cpu()
+            e_mask.cpu()
+            d_mask.cpu()
+
+            trg_output_shape = trg_output.shape
+            loss = self.criterion(
+                output.view(-1, sp_vocab_size),
+                trg_output.view(trg_output_shape[0] * trg_output_shape[1])
+            )
+
+            valid_losses.append(loss.item())
+                
+            output.cpu()
+            trg_output.cpu()
+
+        end_time = datetime.datetime.now()
+        validation_time = end_time - start_time
+        seconds = validation_time.seconds
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        
+        mean_valid_loss = np.mean(valid_losses)
+        
+        return mean_valid_loss, f"{hours}hrs {minutes}mins {seconds}secs"
 
     def test(self, method, input_sentence):
         print("Testing starts.")
