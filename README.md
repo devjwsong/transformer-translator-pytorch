@@ -5,23 +5,29 @@ This is a machine translation project using **Transformer** introduced in *Vaswa
 
 I used English-French corpus provided by "European Parliament Proceedings Parallel Corpus 1996-2011", cited in publication *Koehn, P. (2005, September). Europarl: A parallel corpus for statistical machine translation. In MT summit (Vol. 5, pp. 79-86)*.
 
-(The size of the data was so large that only 150000 samples were used for convenience.)
-
 <br/>
 
 ---
 
 ### How to run
 
-1. Install all required packages.
+1. Download the dataset from ["European Parliament Proceedings Parallel Corpus 1996-2011"](https://www.statmt.org/europarl/). 
 	
+   You can choose any parallel corpus you want. Download it and extract it until you have two raw text files, `europarl-v7.SRC-TRG.SRC` and `europarl-v7.SRC-TRG.TRG`.
+   
+   Make `data` directory in the root directory and put raw texts in it.
+   
+   Name each `full_data.src` and `full_data.trg`.
+   
+2. Install all required packages.
+
    ```shell
    pip install -r requirements.txt
    ```
-   
+
    <br/>
-   
-2. Go to `src` directory and run `sp_process.py`.
+
+3. Go to `src` directory and run `sentencepiece_train.py`.
 
    ```shell
    python sentencepiece_train.py
@@ -42,7 +48,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    <br/>
 
-3. Run below command to train a transformer model for machine translation.
+4. Run below command to train a transformer model for machine translation.
 
    ```shell
    python main.py --mode='train' --ckpt_name=CHECKPOINT_NAME
@@ -59,19 +65,19 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    <br/>
 
-4. Run below command to test the trained model.
+5. Run below command to test the trained model.
 
    ```shell
    python main.py --mode='test' --ckpt_name=CHECKPOINT_NAME --input=INPUT_TEXT --decode=DECODING_STRATEGY
    ```
-   
+
    - `--input`: This is an input sequence you want to translate.
    - `--decode`: This makes the decoding algorithm into either greedy method or beam search. Make this parameter 'greedy' or 'beam'. 
-   
+
    You will get the result as follows.
-   
+
    <img src="https://user-images.githubusercontent.com/16731987/81287373-9c9cac00-909d-11ea-86a1-7024374c2b3f.png" alt="Transformer in Pytorch NMT task testing result."/>
-   
+
    <br/>
 
 ---
