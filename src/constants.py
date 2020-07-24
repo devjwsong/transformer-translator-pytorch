@@ -1,12 +1,12 @@
 import torch
 
 # Path or parameters for data
-DATA_DIR = 'data'
-SP_DIR = 'data/sp'
-SRC_DIR = 'en'
-TRG_DIR = 'fr'
-SRC_RAW_DATA_NAME = 'raw_data.en'
-TRG_RAW_DATA_NAME = 'raw_data.fr'
+DATA_DIR = '../data'
+SP_DIR = '../data/sp'
+SRC_DIR = 'src'
+TRG_DIR = 'trg'
+SRC_RAW_DATA_NAME = 'raw_data.src'
+TRG_RAW_DATA_NAME = 'raw_data.trg'
 TRAIN_NAME = 'train.txt'
 VALID_NAME = 'valid.txt'
 TEST_NAME = 'test.txt'
@@ -25,7 +25,7 @@ model_type = 'unigram'
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 learning_rate = 0.0001
-batch_size = 32
+batch_size = 128
 seq_len = 200
 num_heads = 8
 num_layers = 6

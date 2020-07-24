@@ -19,7 +19,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    
    Make `data` directory in the root directory and put raw texts in it.
    
-   Name each `full_data.src` and `full_data.trg`.
+   Name each `raw_data.src` and `raw_data.trg`.
    
    <br/>
    
@@ -47,8 +47,14 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
        - `src_sp.vocab`
        - `tar_sp.model`
        - `tar_sp.vocab`
-     - `full_data.src`
-     - `full_data.tar`
+     - `src`
+       - `train.txt`
+       - `valid.txt`
+     - `trg`
+       - `train.txt`
+       - `valid.txt`
+     - `raw_data.src`
+     - `raw_data.tar`
 
    <br/>
 
