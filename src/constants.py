@@ -25,7 +25,7 @@ model_type = 'unigram'
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 learning_rate = 0.0001
-batch_size = 128
+batch_size = 64
 seq_len = 200
 num_heads = 8
 num_layers = 6

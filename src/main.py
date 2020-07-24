@@ -83,11 +83,6 @@ class Manager():
                 e_mask, d_mask = self.make_mask(src_input, trg_input)
 
                 output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
-                
-                src_input.cpu()
-                trg_input.cpu()
-                e_mask.cpu()
-                d_mask.cpu()
 
                 trg_output_shape = trg_output.shape
                 self.optim.zero_grad()
@@ -101,8 +96,14 @@ class Manager():
 
                 train_losses.append(loss.item())
                 
-                output.cpu()
-                trg_output.cpu()
+                del src_input
+                del trg_input
+                del trg_output
+                del e_mask
+                del d_mask
+                del output
+
+                torch.cuda.empty_cache()
 
             end_time = datetime.datetime.now()
             training_time = end_time - start_time
@@ -145,11 +146,6 @@ class Manager():
             e_mask, d_mask = self.make_mask(src_input, trg_input)
 
             output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
-                
-            src_input.cpu()
-            trg_input.cpu()
-            e_mask.cpu()
-            d_mask.cpu()
 
             trg_output_shape = trg_output.shape
             loss = self.criterion(
@@ -159,8 +155,14 @@ class Manager():
 
             valid_losses.append(loss.item())
                 
-            output.cpu()
-            trg_output.cpu()
+            del src_input
+            del trg_input
+            del trg_output
+            del e_mask
+            del s_mask
+            del output
+
+            torch.cuda.empty_cache()
 
         end_time = datetime.datetime.now()
         validation_time = end_time - start_time
