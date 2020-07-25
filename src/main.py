@@ -96,13 +96,7 @@ class Manager():
 
                 train_losses.append(loss.item())
                 
-                del src_input
-                del trg_input
-                del trg_output
-                del e_mask
-                del d_mask
-                del output
-
+                del src_input, trg_input, trg_output, e_mask, d_mask, output
                 torch.cuda.empty_cache()
 
             end_time = datetime.datetime.now()
@@ -138,31 +132,26 @@ class Manager():
         
         valid_losses = []
         start_time = datetime.datetime.now()
-        
-        for i, batch in tqdm(enumerate(self.valid_loader)):
-            src_input, trg_input, trg_output = batch
-            src_input, trg_input, trg_output = src_input.to(device), trg_input.to(device), trg_output.to(device)
 
-            e_mask, d_mask = self.make_mask(src_input, trg_input)
+        with torch.no_grad():
+            for i, batch in tqdm(enumerate(self.valid_loader)):
+                src_input, trg_input, trg_output = batch
+                src_input, trg_input, trg_output = src_input.to(device), trg_input.to(device), trg_output.to(device)
 
-            output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
+                e_mask, d_mask = self.make_mask(src_input, trg_input)
 
-            trg_output_shape = trg_output.shape
-            loss = self.criterion(
-                output.view(-1, sp_vocab_size),
-                trg_output.view(trg_output_shape[0] * trg_output_shape[1])
-            )
+                output = self.model(src_input, trg_input, e_mask, d_mask) # (B, L, vocab_size)
 
-            valid_losses.append(loss.item())
-                
-            del src_input
-            del trg_input
-            del trg_output
-            del e_mask
-            del s_mask
-            del output
+                trg_output_shape = trg_output.shape
+                loss = self.criterion(
+                    output.view(-1, sp_vocab_size),
+                    trg_output.view(trg_output_shape[0] * trg_output_shape[1])
+                )
 
-            torch.cuda.empty_cache()
+                valid_losses.append(loss.item())
+
+                del src_input, trg_input, trg_output, e_mask, d_mask, output
+                torch.cuda.empty_cache()
 
         end_time = datetime.datetime.now()
         validation_time = end_time - start_time
