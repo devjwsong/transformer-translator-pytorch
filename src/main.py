@@ -124,6 +124,9 @@ class Manager():
                 print(f"***** Current best checkpoint is saved. *****")
                 self.best_loss = valid_loss
 
+            print(f"Best valid loss: {self.best_loss}")
+            print(f"Valid loss: {valid_loss} || One epoch training time: {valid_time}")
+
         print(f"Training finished!")
         
     def validation(self):
