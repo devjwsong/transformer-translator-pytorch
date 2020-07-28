@@ -164,7 +164,7 @@ class Manager():
         
         return mean_valid_loss, f"{hours}hrs {minutes}mins {seconds}secs"
 
-    def test(self, method, input_sentence):
+    def test(self, input_sentence, method):
         print("Testing starts.")
         self.model.eval()
 
@@ -321,7 +321,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', required=True, help="train or test?")
     parser.add_argument('--ckpt_name', required=False, help="best checkpoint file")
-    parser.add_argument('--input', type=str, required=False, help="input sentence when testing")
+    parser.add_argument('--input', type=str, required=True, help="input sentence when testing")
     parser.add_argument('--decode', type=str, required=False, default="greedy", help="greedy or beam?")
 
     args = parser.parse_args()
@@ -337,7 +337,7 @@ if __name__=='__main__':
         assert args.ckpt_name is not None, "Please specify the model file name you want to test."
         assert args.input is not None, "Please specify the input sentence to translate."
         assert args.decode == 'greedy' or args.decode =='beam', "Please specify correct decoding method, either 'greedy' or 'beam'."
-        
+       
         manager = Manager(is_train=False, ckpt_name=args.ckpt_name)
         manager.test(args.input, args.decode)
 
