@@ -324,8 +324,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', required=True, help="train or test?")
     parser.add_argument('--ckpt_name', required=False, help="best checkpoint file")
-    parser.add_argument('--input', type=str, required=True, help="input sentence when testing")
-    parser.add_argument('--decode', type=str, required=False, default="greedy", help="greedy or beam?")
+    parser.add_argument('--input', type=str, required=False, help="input sentence when testing")
+    parser.add_argument('--decode', type=str, required=True, default="greedy", help="greedy or beam?")
 
     args = parser.parse_args()
 
