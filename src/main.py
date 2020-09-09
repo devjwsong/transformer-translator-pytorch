@@ -118,7 +118,7 @@ class Manager():
                 state_dict = {
                     'model_state_dict': self.model.state_dict(),
                     'optim_state_dict': self.optim.state_dict(),
-                    'loss': mean_train_loss
+                    'loss': self.best_loss
                 }
                 torch.save(state_dict, f"{ckpt_dir}/best_ckpt.tar")
                 print(f"***** Current best checkpoint is saved. *****")
