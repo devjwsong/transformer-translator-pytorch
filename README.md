@@ -1,9 +1,8 @@
 # transformer-nmt-pytorch
-This is a machine translation project using **Transformer** introduced in *Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., ... & Polosukhin, I. (2017). Attention is all you need. In Advances in neural information processing systems (pp. 5998-6008)*.
+This is a machine translation project using **Transformer** introduced in *Attention is all you need*[[1]](#1).
 
-
-
-I used English-French corpus provided by "European Parliament Proceedings Parallel Corpus 1996-2011", cited in publication *Koehn, P. (2005, September). Europarl: A parallel corpus for statistical machine translation. In MT summit (Vol. 5, pp. 79-86)*.
+I used English-French corpus provided by "European Parliament Proceedings Parallel Corpus 1996-2011"[[2]](#2).
+(You can use any other datasets, of course.)
 
 <br/>
 
@@ -20,6 +19,8 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    Make `data` directory in the root directory and put raw texts in it.
    
    Name each `raw_data.src` and `raw_data.trg`.
+   
+   Of course, you can use additional datasets and just make sure that the formats/names of raw data files are same as those of above datasets. 
    
    <br/>
    
@@ -89,5 +90,15 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    <img src="https://user-images.githubusercontent.com/16731987/81287373-9c9cac00-909d-11ea-86a1-7024374c2b3f.png" alt="Transformer in Pytorch NMT task testing result."/>
 
    <br/>
+   
+<hr style="background: transparent; border: 0.5px dashed;"/>
+
+### References
+
+<a id="1">[1]</a> 
+*Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., ... & Polosukhin, I. (2017). Attention is all you need. In Advances in neural information processing systems (pp. 5998-6008)*. ([http://papers.nips.cc/paper/7181-attention-is-all-you-need](http://papers.nips.cc/paper/7181-attention-is-all-you-need))
+
+<a id="2">[2]</2> 
+*Koehn, P. (2005, September). Europarl: A parallel corpus for statistical machine translation. In MT summit (Vol. 5, pp. 79-86)*. ([http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.459.5497&rep=rep1&type=pdf](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.459.5497&rep=rep1&type=pdf))
 
 ---
