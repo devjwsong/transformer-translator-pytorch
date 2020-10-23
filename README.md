@@ -104,8 +104,6 @@ Argument | Type | Description | Default
 
    Each model and vocab files are for source language and target language.
 
-   <br/>
-
    In default setting, the structure of whole data directory should be like below.
 
    - `data`
