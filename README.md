@@ -1,5 +1,5 @@
-# transformer-nmt-pytorch
-This is a machine translation project using **Transformer** introduced in *Attention is all you need*[[1]](#1).
+# transformer-translator-pytorch
+This is a machine translation project using the basic **Transformer** introduced in *Attention is all you need*[[1]](#1).
 
 I used English-French corpus provided by "European Parliament Proceedings Parallel Corpus 1996-2011"[[2]](#2).
 (You can use any other datasets, of course.)
@@ -7,6 +7,68 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 <br/>
 
 ---
+
+### Configurations
+
+You can set various hyperparameters in `src/constants.py` file.
+
+The description of each variable is as follows.
+
+<br/>
+
+**Parameters for data**
+
+Argument | Type | Description | Default
+---------|------|---------------|------------
+`DATA_DIR` | `str` | Name of the parent directory where data files are stored. | `'data'` 
+`SP_DIR` | `str` | Path for the directory which contains the sentence tokenizers and vocab files. | `f'{DATA_DIR}/sp'` 
+`SRC_DIR` | `str` | Name of the directory which contains the source data files. | `'src'` 
+`TRG_DIR` | `str` | Name of the directory which contains the target data files. | `'trg'` 
+`SRC_RAW_DATA_NAME` | `str` | Name of the source raw data file. | `raw_data.src` 
+`TRG_RAW_DATA_NAME` | `str` | Name of the target raw data file. | `raw_data.trg` 
+`TRAIN_NAME` | `str` | Name of the train data file. | `train.txt` 
+`VALID_NAME` | `str` | Name of the validation data file. | `valid.txt` 
+`TEST_NAME` | `str` | Name of the test data file. | `test.txt` 
+
+<br/>
+
+**Parameters for Sentencepiece**
+
+| Argument             | Type    | Description                                                  | Default   |
+| -------------------- | ------- | ------------------------------------------------------------ | --------- |
+| `pad_id`             | `int`   | The index of pad token.                                      | `0`       |
+| `sos_id`             | `int`   | The index of start token.                                    | `1`       |
+| `eos_id`             | `int`   | The index of end token.                                      | `2`       |
+| `unk_id`             | `int`   | The index of unknown token.                                  | `3`       |
+| `src_model_prefix`   | `str`   | The file name prefix for the source language tokenizer & vocabulary. | `src_sp`  |
+| `trg_model_prefix`   | `str`   | The file name prefix for the target language tokenizer & vocabulary. | `trg_sp`  |
+| `sp_vocab_size`      | `int`   | The size of vocabulary.                                      | `16000`   |
+| `character_coverage` | `float` | The value for character coverage.                            | `1.0`     |
+| `model_type`         | `str`   | The type of sentencepiece model. (`unigram`, `bpe`, `char`, or `word`) | `unigram` |
+
+<br/>
+
+**Parameters for the transformer & training**
+
+| Argument        | Type           | Description                                                  | Default                                                      |
+| --------------- | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `device`        | `torch.device` | The device type. (CUDA or CPU)                               | `torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')` |
+| `learning_rate` | `float`        | The learning rate.                                           | `1e-4`                                                       |
+| `batch_size`    | `int`          | The batch size.                                              | `80`                                                         |
+| `seq_len`       | `int`          | The maximum length of a sentence.                            | `200`                                                        |
+| `num_heads`     | `int`          | The number of heads for Multi-head attention.                | `8`                                                          |
+| `num_layers`    | `int`          | The number of layers in the encoder & the decoder.           | `6`                                                          |
+| `d_model`       | `int`          | The size of hidden states in the model.                      | `512`                                                        |
+| `d_ff`          | `int`          | The size of intermediate  hidden states in the feed-forward layer. | `2048`                                                       |
+| `d_k`           | `int`          | The size of dimension which a single head should take. (Make sure that `d_model` is divided into `num_heads`.) | `d_model // num_heads`                                       |
+| `drop_out_rate` | `float`        | The dropout rate.                                            | `0.1`                                                        |
+| `num_epochs`    | `int`          | The total number of iterations.                              | `10`                                                         |
+| `beam_size`     | `int`          | The beam size. (Only used when the beam search is used at inference time.) | `8`                                                          |
+| `ckpt_dir`      | `str`          | The path for saved checkpoints.                              | `saved_model`                                                |
+
+<br/>
+
+<hr style="background: transparent; border: 0.5px dashed;"/>
 
 ### How to run
 
@@ -16,9 +78,9 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
    
    Download it and extract it until you have two raw text files, `europarl-v7.SRC-TRG.SRC` and `europarl-v7.SRC-TRG.TRG`.
    
-   Make `data` directory in the root directory and put raw texts in it.
+   Make `DATA_DIR` directory in the root directory and put raw texts in it.
    
-   Name each `raw_data.src` and `raw_data.trg`.
+   Name each ``SRC_RAW_DATA_NAME`` and ``TRG_RAW_DATA_NAME``.
    
    Of course, you can use additional datasets and just make sure that the formats/names of raw data files are same as those of above datasets. 
    
@@ -32,15 +94,19 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 
    <br/>
 
-3. Go to `src` directory and run `sentencepiece_train.py`.
+3. Run `src/sentencepiece_train.py`.
 
    ```shell
-   python sentencepiece_train.py
+   python src/sentencepiece_train.py
    ```
 
-   Then in `data` directory, there would be `sp` directory containing two sentencepiece models and two vocab files.
+   Then there would be `SP_DIR` directory containing two sentencepiece models and two vocab files.
 
    Each model and vocab files are for source language and target language.
+
+   <br/>
+
+   In default setting, the structure of whole data directory should be like below.
 
    - `data`
      - `sp`
@@ -62,7 +128,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 4. Run below command to train a transformer model for machine translation.
 
    ```shell
-   python main.py --mode='train' --ckpt_name=CHECKPOINT_NAME
+   python src/main.py --mode='train' --ckpt_name=CHECKPOINT_NAME
    ```
 
    - `--mode`: You have to specify the mode among two options, 'train' or 'test'.
@@ -79,7 +145,7 @@ I used English-French corpus provided by "European Parliament Proceedings Parall
 5. Run below command to test the trained model.
 
    ```shell
-   python main.py --mode='test' --ckpt_name=CHECKPOINT_NAME --input=INPUT_TEXT --decode=DECODING_STRATEGY
+   python src/main.py --mode='test' --ckpt_name=CHECKPOINT_NAME --input=INPUT_TEXT --decode=DECODING_STRATEGY
    ```
 
    - `--input`: This is an input sequence you want to translate.

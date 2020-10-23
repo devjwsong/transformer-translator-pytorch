@@ -2,7 +2,7 @@ import torch
 
 # Path or parameters for data
 DATA_DIR = 'data'
-SP_DIR = 'data/sp'
+SP_DIR = f'{DATA_DIR}/sp'
 SRC_DIR = 'src'
 TRG_DIR = 'trg'
 SRC_RAW_DATA_NAME = 'raw_data.src'
@@ -24,7 +24,7 @@ model_type = 'unigram'
 
 # Parameters for Transformer & training
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-learning_rate = 0.0001
+learning_rate = 1e-4
 batch_size = 80
 seq_len = 200
 num_heads = 8
