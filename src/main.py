@@ -167,8 +167,8 @@ class Manager():
         
         return mean_valid_loss, f"{hours}hrs {minutes}mins {seconds}secs"
 
-    def test(self, input_sentence, method):
-        print("Testing starts.")
+    def inference(self, input_sentence, method):
+        print("Inference starts.")
         self.model.eval()
 
         print("Loading sentencepiece tokenizer...")
@@ -198,14 +198,14 @@ class Manager():
 
         end_time = datetime.datetime.now()
 
-        total_testing_time = end_time - start_time
-        seconds = total_testing_time.seconds
+        total_inference_time = end_time - start_time
+        seconds = total_inference_time.seconds
         minutes = seconds // 60
         seconds = seconds % 60
 
         print(f"Input: {input_sentence}")
         print(f"Result: {result}")
-        print(f"Testing finished! || Total testing time: {minutes}mins {seconds}secs")
+        print(f"Inference finished! || Total inference time: {minutes}mins {seconds}secs")
         
     def greedy_search(self, e_output, e_mask, trg_sp):
         last_words = torch.LongTensor([pad_id] * seq_len).to(device) # (L)
@@ -322,9 +322,9 @@ class Manager():
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, help="train or test?")
+    parser.add_argument('--mode', required=True, help="train or inference?")
     parser.add_argument('--ckpt_name', required=False, help="best checkpoint file")
-    parser.add_argument('--input', type=str, required=False, help="input sentence when testing")
+    parser.add_argument('--input', type=str, required=False, help="input sentence when inferencing")
     parser.add_argument('--decode', type=str, required=True, default="greedy", help="greedy or beam?")
 
     args = parser.parse_args()
@@ -336,13 +336,13 @@ if __name__=='__main__':
             manager = Manager(is_train=True)
 
         manager.train()
-    elif args.mode == 'test':
-        assert args.ckpt_name is not None, "Please specify the model file name you want to test."
+    elif args.mode == 'inference':
+        assert args.ckpt_name is not None, "Please specify the model file name you want to use."
         assert args.input is not None, "Please specify the input sentence to translate."
         assert args.decode == 'greedy' or args.decode =='beam', "Please specify correct decoding method, either 'greedy' or 'beam'."
        
         manager = Manager(is_train=False, ckpt_name=args.ckpt_name)
-        manager.test(args.input, args.decode)
+        manager.inference(args.input, args.decode)
 
     else:
-        print("Please specify mode argument either with 'train' or 'test'.")
+        print("Please specify mode argument either with 'train' or 'inference'.")
