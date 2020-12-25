@@ -115,6 +115,8 @@ class Manager():
             if valid_loss < self.best_loss:
                 if not os.path.exists(ckpt_dir):
                     os.mkdir(ckpt_dir)
+                    
+                self.best_loss = valid_loss
                 state_dict = {
                     'model_state_dict': self.model.state_dict(),
                     'optim_state_dict': self.optim.state_dict(),
@@ -122,7 +124,6 @@ class Manager():
                 }
                 torch.save(state_dict, f"{ckpt_dir}/best_ckpt.tar")
                 print(f"***** Current best checkpoint is saved. *****")
-                self.best_loss = valid_loss
 
             print(f"Best valid loss: {self.best_loss}")
             print(f"Valid loss: {valid_loss} || One epoch training time: {valid_time}")
